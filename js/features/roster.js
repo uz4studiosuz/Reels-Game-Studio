@@ -166,6 +166,36 @@
         },
 
         resetTeams() { for (const k in this.profiles) this.profiles[k].team = null; this.saveProfiles(); this._subs.forEach(fn => fn(this.names)); },
+
+        /**
+         * Barcha obunachilarni Qizil (0) va Ko'k (1) jamoalariga teng (50/50) taqsimlaydi.
+         * Jangchi turlari (ritsar, kamonchi va h.k.) ham ikkala jamoaga muvozanatli taqsimlanadi.
+         */
+        autoDistributeTeams(rand = Math.random) {
+            const list = this.names.slice();
+            if (!list.length) return { team0: 0, team1: 0, total: 0 };
+
+            const byClass = {};
+            for (const entry of list) {
+                const { name, cls } = this.split(entry);
+                const k = cls || '_none';
+                (byClass[k] = byClass[k] || []).push(name);
+            }
+
+            const cnt = [0, 0];
+            for (const k of Object.keys(byClass)) {
+                const names = shuffle(byClass[k], rand);
+                for (const name of names) {
+                    const t = cnt[0] < cnt[1] ? 0 : cnt[1] < cnt[0] ? 1 : (rand() < 0.5 ? 0 : 1);
+                    this.profile(name).team = t;
+                    cnt[t]++;
+                }
+            }
+
+            this.saveProfiles();
+            this._subs.forEach(fn => fn(this.names));
+            return { team0: cnt[0], team1: cnt[1], total: list.length };
+        },
         resetStats() { for (const k in this.profiles) Object.assign(this.profiles[k], { wins: 0, games: 0, kills: 0 }); this.saveProfiles(); this._subs.forEach(fn => fn(this.names)); },
     });
 

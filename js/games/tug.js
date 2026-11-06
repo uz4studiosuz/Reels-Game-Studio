@@ -8,7 +8,7 @@
 
     const SETTINGS = [
         { group: 'Ishtirokchilar', key: 'fillBots', label: 'Bot bilan to\'ldirish', type: 'toggle', default: false, hint: () => App.roster.realOnly ? 'Obunachilar bo\'limida "Real obunachilar" yoqilgan (botlar o\'chiq)' : 'Obunachi yetmasa, botlar bilan to\'ldiriladi', active: () => !App.roster.realOnly },
-        { key: 'players', label: 'Eng ko\'pi bilan', type: 'range', min: 2, max: 40, step: 2, default: 16, hint: 'Yarmi qizil, yarmi ko\'k jamoada', active: (v) => !App.roster.realOnly && !!v.fillBots },
+        { key: 'players', label: 'Eng ko\'pi bilan', type: 'range', min: 2, max: 40, step: 2, default: 16, hint: (v) => { const h = Math.round((v.players || 16) / 2); return `Yarmi qizil, yarmi ko'k (${h} + ${h})` + (App.roster.names.length ? ` · Ro'yxatda: ${App.roster.names.length} ta` : ''); } },
         { key: 'remember', label: 'Saqlangan jamoani ishlatish', type: 'toggle', default: true, hint: 'Obunachi Armiya jangidagi jamoasida chiqadi' },
         { group: 'Jamoalar', key: 'aName', label: 'Chap jamoa', type: 'text', default: 'QIZILLAR' },
         { key: 'bName', label: 'O\'ng jamoa', type: 'text', default: 'KO\'KLAR' },

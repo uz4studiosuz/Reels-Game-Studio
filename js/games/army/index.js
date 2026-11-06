@@ -10,10 +10,30 @@
 
     const SETTINGS = [
         { group: 'Qatnashuvchilar', key: 'fillBots', label: 'Bot bilan to\'ldirish', type: 'toggle', default: false, hint: () => App.roster.realOnly ? 'Obunachilar bo\'limida "Real obunachilar" yoqilgan (botlar o\'chiq)' : 'Obunachi yetmasa, botlar bilan to\'ldiriladi', active: () => !App.roster.realOnly },
-        { key: 'total', label: 'Eng ko\'pi bilan', type: 'range', min: 2, max: 120, step: 2, default: 60, hint: 'Yarmi qizil, yarmi ko\'k', active: (v) => !App.roster.realOnly && !!v.fillBots },
+        { key: 'total', label: 'Eng ko\'pi bilan', type: 'range', min: 2, max: 120, step: 2, default: 60, hint: (v) => { const h = Math.round((v.total || 60) / 2); return `Yarmi qizil, yarmi ko'k (${h} + ${h})` + (App.roster.names.length ? ` · Ro'yxatda: ${App.roster.names.length} ta` : ''); } },
         { key: 'classes', label: 'Jangchi turi', type: 'segment', default: 'viewer', options: [['viewer', 'Obunachi tanlaydi'], ['random', 'Tasodifiy']], hint: 'Komment: "nik ritsar", "nik:kamonchi", jodugar, otliq, shifokor' },
         { group: 'Jamoalar', key: 'aName', label: 'Qizil jamoa nomi', type: 'text', default: 'QIZIL ARMIYA' },
         { key: 'bName', label: 'Ko\'k jamoa nomi', type: 'text', default: 'KO\'K ARMIYA' },
+        {
+            key: 'autoBalance',
+            label: 'Odamlar sonini taqsimlash',
+            type: 'button',
+            buttonText: '⚖️ Avto taqsimlash (50 / 50)',
+            hint: () => {
+                const R = App.roster;
+                let c0 = 0, c1 = 0;
+                for (const e of R.names) {
+                    const t = R.profile(R.split(e).name).team;
+                    if (t === 0) c0++; else if (t === 1) c1++;
+                }
+                const un = R.names.length - c0 - c1;
+                return `Hozir: Qizil ${c0} ta, Ko'k ${c1} ta` + (un > 0 ? `, noma'lum ${un} ta` : '') + '. Bosilsa obunachilar ikkala armiyaga teng 50/50 taqsimlanadi.';
+            },
+            onClick: ({ refresh }) => {
+                App.roster.autoDistributeTeams();
+                if (refresh) refresh();
+            },
+        },
         { group: 'Ko\'rinish', key: 'camera', label: 'Kamera', type: 'segment', default: 'cinema', options: [['cinema', 'Kino'], ['orbit', 'Aylanma'], ['top', 'Yuqoridan']] },
         { key: 'names', label: 'Ism yorliqlari', type: 'toggle', default: true },
         { key: 'prompt', label: 'Tur tanlash eslatmasi', type: 'toggle', default: true },
@@ -156,30 +176,109 @@
             }
             sparks.length = 0;
 
-            // ism yorliqlari va jon chiziqlari
+            // ism yorliqlari va jon chiziqlari (barcha obunachilar ko'rinadi)
+            const camPos = world.camera.position;
             const vis = [];
             for (const u of battle.units) {
                 if (!u.alive) continue;
-                const sp = world.project(u.x, u.cls === 'cavalry' ? 3.3 : 3.7, u.z);
-                if (!sp || sp.x < 6 || sp.x > W - 6 || sp.y < 235 || sp.y > 1150) continue;
-                vis.push({ u, sp });
-                if (u.hp < u.max) {
-                    const bw = 26;
-                    ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fillRect(sp.x - bw / 2, sp.y + 6, bw, 4);
-                    ctx.fillStyle = TEAM_HEX[u.team]; ctx.fillRect(sp.x - bw / 2, sp.y + 6, bw * u.hp / u.max, 4);
-                }
+                const headY = u.cls === 'cavalry' ? 3.4 : 3.6;
+                const sp = world.project(u.x, headY, u.z);
+                if (!sp || sp.x < 4 || sp.x > W - 4 || sp.y < 70 || sp.y > 1260) continue;
+                const dist = Math.hypot(u.x - camPos.x, headY - camPos.y, u.z - camPos.z);
+                vis.push({ u, sp, dist });
             }
-            if (cfg.names) {
-                vis.filter(v => v.u.p.nick).sort((a, b) => a.sp.depth - b.sp.depth).slice(0, 12).forEach(({ u, sp }) => {
-                    const label = fit(ctx, App.roster.display(u.p), 120, 17, 700);
-                    ctx.font = `700 17px ${FONT}`;
-                    const w = ctx.measureText(label).width + 36;
-                    ctx.fillStyle = 'rgba(13,13,16,.72)';
-                    rr(ctx, sp.x - w / 2, sp.y - 14, w, 26, 13); ctx.fill();
-                    ctx.fillStyle = TEAM_HEX[u.team]; ctx.beginPath(); ctx.arc(sp.x - w / 2 + 13, sp.y - 1, 5, 0, Math.PI * 2); ctx.fill();
-                    text(ctx, u.c.icon, sp.x - w / 2 + 28, sp.y, { size: 14 });
-                    text(ctx, label, sp.x + 12, sp.y + 1, { size: 17, weight: 700, color: '#fff' });
-                });
+
+            // Orqadagi jangchilardan oldingilarga qarab chizish (yaqindagi yorliqlar ustma-ust chiroyli chiqadi)
+            vis.sort((a, b) => b.dist - a.dist);
+
+            for (const { u, sp, dist } of vis) {
+                // Masofaga qarab proporsional masshtab (uzoqdagi jangchilar ekranni to'sib qo'ymaydi)
+                const sc = clamp(44 / dist, 0.62, 1.15);
+
+                // Ekran chetlarida yumshoq so'nish
+                let alpha = 1;
+                if (sp.y < 210) alpha = clamp((sp.y - 95) / 105, 0, 1);
+                else if (sp.y > 1200) alpha = clamp((1260 - sp.y) / 60, 0, 1);
+                if (alpha <= 0.04) continue;
+
+                if (cfg.names) {
+                    const fontSize = Math.round(15 * sc);
+                    const rawName = App.roster.display(u.p);
+                    const label = fit(ctx, rawName, Math.round(110 * sc), fontSize, 700);
+                    ctx.font = `700 ${fontSize}px ${FONT}`;
+                    const textW = ctx.measureText(label).width;
+
+                    const padDot = 9 * sc;
+                    const dotToIcon = 12 * sc;
+                    const iconToText = 13 * sc;
+                    const padRight = 10 * sc;
+                    const pillW = Math.round(padDot + dotToIcon + iconToText + textW + padRight);
+                    const pillH = Math.round(22 * sc);
+                    const pillR = Math.round(pillH / 2);
+                    const pillX = Math.round(sp.x - pillW / 2);
+                    const pillY = Math.round(sp.y - pillH - (u.hp < u.max ? 6 * sc : 2 * sc));
+                    const midY = pillY + pillH / 2;
+
+                    ctx.save();
+                    ctx.globalAlpha = alpha;
+
+                    // Fon yorlig'i
+                    ctx.fillStyle = 'rgba(12,14,18,.82)';
+                    rr(ctx, pillX, pillY, pillW, pillH, pillR);
+                    ctx.fill();
+
+                    // Nozik kontur
+                    ctx.strokeStyle = 'rgba(255,255,255,.14)';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+
+                    // Jamoa doirasi (qizil / ko'k)
+                    ctx.fillStyle = TEAM_HEX[u.team];
+                    ctx.beginPath();
+                    ctx.arc(pillX + padDot, midY, 3.5 * sc, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Jangchi turi belgisi (⚔️, 🏹, 🔮, 🐎, 💚)
+                    text(ctx, u.c.icon, pillX + padDot + dotToIcon, midY, { size: Math.round(12 * sc) });
+
+                    // Ism
+                    text(ctx, label, pillX + padDot + dotToIcon + iconToText, midY + 0.5, {
+                        size: fontSize,
+                        weight: 700,
+                        align: 'left',
+                        color: '#ffffff',
+                    });
+
+                    // Jon chizig'i (zararlanganda yorliq ostida aniq ko'rinadi)
+                    if (u.hp < u.max) {
+                        const bw = Math.max(22 * sc, Math.round(pillW * 0.76));
+                        const bh = Math.max(2.5, Math.round(3.2 * sc));
+                        const bx = Math.round(sp.x - bw / 2);
+                        const by = Math.round(pillY + pillH + 2 * sc);
+                        ctx.fillStyle = 'rgba(0,0,0,.65)';
+                        rr(ctx, bx, by, bw, bh, bh / 2);
+                        ctx.fill();
+                        ctx.fillStyle = TEAM_HEX[u.team];
+                        rr(ctx, bx, by, Math.max(bh, bw * (u.hp / u.max)), bh, bh / 2);
+                        ctx.fill();
+                    }
+
+                    ctx.restore();
+                } else if (u.hp < u.max) {
+                    ctx.save();
+                    ctx.globalAlpha = alpha;
+                    const bw = Math.round(26 * sc);
+                    const bh = Math.max(3, Math.round(4 * sc));
+                    const bx = Math.round(sp.x - bw / 2);
+                    const by = Math.round(sp.y - 4 * sc);
+                    ctx.fillStyle = 'rgba(0,0,0,.65)';
+                    rr(ctx, bx, by, bw, bh, bh / 2);
+                    ctx.fill();
+                    ctx.fillStyle = TEAM_HEX[u.team];
+                    rr(ctx, bx, by, Math.max(bh, bw * (u.hp / u.max)), bh, bh / 2);
+                    ctx.fill();
+                    ctx.restore();
+                }
             }
 
             // yuqori panel (armiya kuchi va tirik qolgan jangchilar soni)

@@ -96,6 +96,15 @@
                     control.value = v;
                     set(v);
                 });
+            } else if (s.type === 'button') {
+                control = el('button', 'btn solid', esc(s.buttonText || s.label));
+                control.type = 'button';
+                control.style.width = '100%';
+                control.style.margin = '6px 0';
+                control.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    if (typeof s.onClick === 'function') s.onClick({ values, refresh, onChange, set, btn: control });
+                });
             } else { // text
                 control = el('input');
                 control.type = s.type === 'password' ? 'password' : 'text';

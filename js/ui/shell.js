@@ -280,6 +280,19 @@
             const MAX = 150;
             const classes = App.army ? App.army.CLASSES : {};
             const clsOpts = '<option value="">Tasodifiy</option>' + Object.entries(classes).map(([k, c]) => `<option value="${k}">${c.icon} ${c.name}</option>`).join('');
+
+            let cnt0 = 0, cnt1 = 0, cntAuto = 0;
+            R.names.forEach(e => {
+                const { name } = R.split(e);
+                const t = R.profile(name).team;
+                if (t === 0) cnt0++;
+                else if (t === 1) cnt1++;
+                else cntAuto++;
+            });
+            const summary = R.names.length
+                ? `<div class="rost-help" style="margin: 0 0 8px; font-weight: 600;">Jamoalar: <b style="color:#e8452a">Qizil: ${cnt0}</b> · <b style="color:#3b78e8">Ko'k: ${cnt1}</b>${cntAuto ? ` · <span style="color:var(--mute)">Avto: ${cntAuto}</span>` : ''}</div>`
+                : '';
+
             const rows = [`<div class="rost-row head"><span>Nik</span><span>Jangchi</span><span>Jamoa</span><span style="text-align:right">G / O / K</span></div>`];
             R.names.slice(0, MAX).forEach((e, i) => {
                 const { name, cls } = R.split(e), pr = R.profile(name);
@@ -293,7 +306,7 @@
             });
             if (R.names.length > MAX) rows.push(`<div class="rost-help">… yana ${R.names.length - MAX} ta (jadvalda faqat birinchi ${MAX} ta ko'rsatiladi)</div>`);
             if (!R.names.length) rows.push('<div class="rost-help">Hozircha obunachi yo\'q.</div>');
-            root.innerHTML = rows.join('');
+            root.innerHTML = summary + rows.join('');
             root.querySelectorAll('.rost-row[data-name] select').forEach(sel => sel.addEventListener('change', () => {
                 const name = sel.closest('.rost-row').dataset.name;
                 if (sel.dataset.k === 'cls') R.setClass(name, sel.value || null);
@@ -346,6 +359,17 @@
                     this._scheduleRestart();
                 } catch (err) { note(err.message, true); }
             });
+            if ($('teamsBalance')) {
+                $('teamsBalance').addEventListener('click', () => {
+                    const r = App.roster.autoDistributeTeams();
+                    if (!r.total) {
+                        note('Ro\'yxatda obunachilar yo\'q. Avval nik qo\'shing.', true);
+                        return;
+                    }
+                    note(`Taqsimlandi: ${r.team0} ta Qizil, ${r.team1} ta Ko'k (${r.total} ta obunachi).`);
+                    this._scheduleRestart();
+                });
+            }
             $('teamsReset').addEventListener('click', () => { App.roster.resetTeams(); note('Jamoalar tozalandi: keyingi jangda qayta bo\'linadi.'); });
             $('statsReset').addEventListener('click', () => { if (confirm('Barcha g\'alaba va statistika nolga tushiriladi.')) { App.roster.resetStats(); note('Statistika tozalandi.'); } });
             $('rosterText').addEventListener('change', () => { App.roster.set(App.roster.parse($('rosterText').value)); $('rosterText').value = App.roster.names.join('\n'); this._scheduleRestart(); });

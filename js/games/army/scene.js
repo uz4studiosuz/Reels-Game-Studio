@@ -340,7 +340,8 @@
         }
 
         project(x, y, z) {
-            const v = new THREE.Vector3(x, y, z).project(this.camera);
+            this._vProj = this._vProj || new THREE.Vector3();
+            const v = this._vProj.set(x, y, z).project(this.camera);
             if (v.z > 1 || v.z < -1) return null;
             return { x: (v.x * 0.5 + 0.5) * 720, y: (-v.y * 0.5 + 0.5) * 1280, depth: v.z };
         }
@@ -379,7 +380,7 @@
                 p = new THREE.Vector3(wcx + Math.sin(a) * 24, 16, wcz + Math.cos(a) * 24);
                 l = new THREE.Vector3(wcx, 2.2, wcz);
             } else if (mode === 'top') {
-                p = new THREE.Vector3(0, 150, cz - 14);
+                p = new THREE.Vector3(0, 155, cz - 18);
                 l = new THREE.Vector3(0, 0, cz);
             } else if (mode === 'orbit') {
                 const a = tick * 0.0035;
@@ -392,8 +393,8 @@
                     this.hero = aliveU.length ? aliveU[Math.floor(Math.random() * aliveU.length)] : null;
                 }
                 if (shot === 0) {
-                    p = new THREE.Vector3(0, 50, -HL - 12);
-                    l = new THREE.Vector3(0, 0, HL * 0.06);
+                    p = new THREE.Vector3(0, 58, -HL - 18);
+                    l = new THREE.Vector3(0, 0, HL * 0.04);
                 } else if (shot === 1) {
                     const sd = (Math.floor(tick / 1650) % 2) ? 1 : -1;
                     p = new THREE.Vector3(sd * (HW + 32), 28, cz);
@@ -403,7 +404,7 @@
                     p = new THREE.Vector3(h.x - Math.sin(h.face) * 15, 9, h.z - Math.cos(h.face) * 15);
                     l = new THREE.Vector3(h.x + Math.sin(h.face) * 6, 2.2, h.z + Math.cos(h.face) * 6);
                 } else if (shot === 3) {
-                    p = new THREE.Vector3(0, 125, cz - 16);
+                    p = new THREE.Vector3(0, 135, cz - 20);
                     l = new THREE.Vector3(0, 0, cz);
                 } else {
                     p = new THREE.Vector3(22, 28, cz + 48);
