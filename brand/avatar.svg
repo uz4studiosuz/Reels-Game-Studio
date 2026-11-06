@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1080" viewBox="0 0 1080 1080">
+  <defs>
+    <linearGradient id="trail" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#ff5a36" stop-opacity="0"/>
+      <stop offset="1" stop-color="#ff5a36" stop-opacity="0.95"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#ff5a36" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#ff5a36" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1080" height="1080" fill="#0d0d10"/>
+  <!-- tashqi halqa: teshigi bor (to'p qochib chiqadi) -->
+  <circle cx="540" cy="540" r="300" fill="none" stroke="#f5f2ea" stroke-width="16" stroke-linecap="round"
+          stroke-dasharray="1660 225" transform="rotate(-24 540 540)"/>
+  <!-- ichki halqa -->
+  <circle cx="540" cy="540" r="205" fill="none" stroke="#f5f2ea" stroke-opacity="0.32" stroke-width="8" stroke-linecap="round"
+          stroke-dasharray="1010 278" transform="rotate(150 540 540)"/>
+  <!-- iz -->
+  <path d="M575 505 L790 335" stroke="url(#trail)" stroke-width="38" stroke-linecap="round" fill="none"/>
+  <!-- qochayotgan to'p -->
+  <circle cx="815" cy="312" r="120" fill="url(#glow)"/>
+  <circle cx="815" cy="312" r="50" fill="#ff5a36"/>
+  <circle cx="800" cy="297" r="14" fill="#ffb8a6"/>
+  <!-- ichkaridagi kichik to'p -->
+  <circle cx="470" cy="610" r="26" fill="#f5f2ea"/>
+</svg>

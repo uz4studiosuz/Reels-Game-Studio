@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Reels Lab — Reels uchun o'yinlar</title>
+    <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+    <header class="bar">
+        <div class="mark">reels<i>/</i>lab</div>
+        <nav>
+            <button class="link" id="navHome">Index</button>
+            <button class="link" id="navMute">Ovoz: yoqilgan</button>
+        </nav>
+    </header>
+
+    <!-- BOSH SAHIFA -->
+    <main id="home" class="home">
+        <div class="hero">
+            <div>
+                <h1>Reels uchun<br><b>o'yinlar.</b></h1>
+                <p>O'yinni tanlang, sozlang, yozib oling. Obunachilar nikini qo'shsangiz, ular o'yinning o'zida qatnashadi.</p>
+            </div>
+            <button class="roster-chip" id="homeRoster">Obunachilar <b id="homeRosterCount">0</b> →</button>
+        </div>
+        <div id="index"></div>
+    </main>
+
+    <!-- STUDIYA -->
+    <main id="studio" class="studio" hidden>
+        <section class="stage-col">
+            <div class="phone">
+                <canvas id="stage"></canvas>
+                <div class="gate" id="gate" hidden>
+                    <div class="gate-card">
+                        <div class="gate-kicker">Tayyor</div>
+                        <h3>Boshlashdan oldin</h3>
+                        <p>Videoga yozib olib boshlaymizmi yoki shunchaki ko'rib chiqamizmi?</p>
+                        <button class="btn solid wide" id="gateRec">● Yozib boshlash</button>
+                        <button class="btn wide" id="gatePlay">▶ Yozuvsiz boshlash</button>
+                    </div>
+                </div>
+            </div>
+            <div class="controls">
+                <button class="btn" id="btnRestart">↻ Qayta</button>
+                <button class="btn" id="btnPause">Pauza</button>
+                <button class="btn rec" id="btnRec">Yozish</button>
+                <span class="timer" id="recTimer"></span>
+                <a class="save" id="saveLink" hidden>Videoni saqlash</a>
+                <a class="save" id="srtLink" hidden>Diktor matni (.srt)</a>
+                <div class="rec-note" id="recNote"></div>
+            </div>
+        </section>
+        <aside class="side">
+            <div class="side-head">
+                <button class="link back" id="btnBack">← Index</button>
+                <h2 id="gameName"></h2>
+                <p id="gameTagline"></p>
+            </div>
+            <div class="tabs">
+                <button class="tab on" data-tab="game">O'yin</button>
+                <button class="tab" data-tab="video">Video</button>
+                <button class="tab" data-tab="roster">Obunachilar</button>
+            </div>
+            <div class="panels">
+                <div id="panelGame"></div>
+                <div id="panelVideo" hidden></div>
+                <div id="panelVoice" hidden></div>
+                <div id="panelRoster" hidden>
+                    <div class="roster-count"><span id="rosterCount">0</span><small>nik</small></div>
+                    <ol class="steps">
+                        <li>Videoda: "Nikingizni kommentga yozing — o'yinda qatnashasiz".</li>
+                        <li>Kommentlardagi nik-larni nusxalab, shu yerga joylang (har qatorga bitta yoki vergul bilan).</li>
+                        <li>"nik" belgisi bor o'yinlar ularni avtomatik ishtirokchi qiladi, yetmasa emoji/bot to'ldiradi.</li>
+                        <li>Armiya jangida jangchi turini tanlash uchun: <b>nik ritsar</b>, <b>nik:kamonchi</b>, jodugar, otliq yoki shifokor.</li>
+                    </ol>
+                    <div class="field">
+                        <div class="field-head"><label class="field-label">Nik ro'yxati</label></div>
+                        <textarea id="rosterText" rows="12" placeholder="@ali_01&#10;sevara&#10;javohir, madina"></textarea>
+                    </div>
+                    <div class="row-btns">
+                        <button class="btn" id="rosterShuffle">Aralashtirish</button>
+                        <button class="btn" id="rosterDemo">Namuna 12 ta</button>
+                        <button class="btn" id="rosterClear">Tozalash</button>
+                    </div>
+
+                    <div class="group">Zaxira nusxa</div>
+                    <p class="rost-help">Ro'yxat, jangchi turlari, jamoalar va statistika brauzer xotirasida saqlanadi. Boshqa kompyuterda davom etish uchun faylga saqlang va u yerda tiklang.</p>
+                    <div class="row-btns">
+                        <button class="btn solid" id="rosterExport">⬇ Faylga saqlash</button>
+                        <button class="btn" id="rosterImport">⬆ Tiklash (qo'shish)</button>
+                        <button class="btn" id="rosterImportReplace">⬆ Tiklash (almashtirish)</button>
+                        <input type="file" id="rosterFile" accept=".json,application/json" hidden>
+                    </div>
+                    <div class="rost-note" id="rosterNote"></div>
+
+                    <div class="group">Obunachilar jadvali</div>
+                    <div id="rosterTable" class="rost-table"></div>
+                    <div class="row-btns">
+                        <button class="btn" id="teamsReset">Jamoalarni tozalash</button>
+                        <button class="btn" id="statsReset">Statistikani tozalash</button>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </main>
+
+    <!-- tashqi kutubxona (lokal nusxa) -->
+    <script src="lib/three.min.js"></script>
+    <script src="lib/post/CopyShader.js"></script>
+    <script src="lib/post/LuminosityHighPassShader.js"></script>
+    <script src="lib/post/EffectComposer.js"></script>
+    <script src="lib/post/MaskPass.js"></script>
+    <script src="lib/post/ShaderPass.js"></script>
+    <script src="lib/post/RenderPass.js"></script>
+    <script src="lib/post/UnrealBloomPass.js"></script>
+
+    <!-- core -->
+    <script src="js/core/util.js"></script>
+    <script src="js/core/draw.js"></script>
+    <script src="js/core/audio.js"></script>
+    <script src="js/core/fx.js"></script>
+    <script src="js/core/registry.js"></script>
+    <script src="js/core/gl.js"></script>
+    <script src="js/core/mp4fix.js"></script>
+    <script src="js/core/recorder.js"></script>
+    <script src="js/core/session.js"></script>
+
+    <!-- features -->
+    <script src="js/features/roster.js"></script>
+    <script src="js/features/narrator.js"></script>
+    <script src="js/features/backup.js"></script>
+    <script src="js/features/video-settings.js"></script>
+    <script src="js/features/overlay.js"></script>
+
+    <!-- o'yinlar (tartib bosh sahifadagi tartibni belgilaydi) -->
+    <script src="js/games/track3d/track-builder.js"></script>
+    <script src="js/games/track3d/rail-physics.js"></script>
+    <script src="js/games/track3d/scene.js"></script>
+    <script src="js/games/track3d/index.js"></script>
+    <script src="js/games/army/sim.js"></script>
+    <script src="js/games/army/units.js"></script>
+    <script src="js/games/army/scene.js"></script>
+    <script src="js/games/army/index.js"></script>
+    <script src="js/games/wheel.js"></script>
+    <script src="js/games/royale.js"></script>
+    <script src="js/games/glass-bridge.js"></script>
+    <script src="js/games/nick-plinko.js"></script>
+    <script src="js/games/bomb.js"></script>
+    <script src="js/games/sumo.js"></script>
+    <script src="js/games/red-light.js"></script>
+    <script src="js/games/tug.js"></script>
+    <script src="js/games/penalty.js"></script>
+    <script src="js/games/vs/vs-kit.js"></script>
+    <script src="js/games/vs/floors.js"></script>
+    <script src="js/games/vs/rings.js"></script>
+    <script src="js/games/vs/boss.js"></script>
+    <script src="js/games/hole.js"></script>
+    <script src="js/games/territory.js"></script>
+    <script src="js/games/rps.js"></script>
+    <script src="js/games/multiply.js"></script>
+    <script src="js/games/pendulum.js"></script>
+    <script src="js/games/note-ring.js"></script>
+    <script src="js/games/domino.js"></script>
+
+    <!-- ui -->
+    <script src="js/ui/form.js"></script>
+    <script src="js/ui/shell.js"></script>
+</body>
+</html>

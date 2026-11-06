@@ -1,0 +1,1802 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Reels & TikTok Viral Game Studio (9:16)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #07070b;
+            color: #f3f4f6;
+            overflow-x: hidden;
+        }
+        /* 9:16 Reels proporsiyasini saqlovchi konteyner */
+        .reels-wrapper {
+            aspect-ratio: 9 / 16;
+            width: 100%;
+            max-width: 390px;
+            background: #020204;
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.9), 0 0 20px rgba(59, 130, 246, 0.15);
+        }
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            border-radius: 1rem;
+        }
+        @keyframes pulse-rec {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.45; transform: scale(1.08); }
+        }
+        .rec-dot {
+            animation: pulse-rec 1.1s infinite ease-in-out;
+        }
+        /* Maxsus skrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #111827; }
+        ::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col lg:flex-row items-center lg:items-start justify-center gap-5 p-3 sm:p-5">
+
+    <!-- CHAP / YUQORI QISM: 9:16 REELS SAHNASI VA ASOSIY TUGMALAR -->
+    <div class="flex flex-col items-center w-full max-w-[390px] shrink-0">
+        <!-- Holat va Taymer paneli -->
+        <div class="w-full flex items-center justify-between mb-2 px-2">
+            <div class="flex items-center gap-2">
+                <span class="text-xs font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-full bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow">
+                    9:16 REELS / SHORTS
+                </span>
+                <span id="recBadge" class="hidden items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full bg-red-950/90 border border-red-500/60 text-red-300">
+                    <span class="w-2.5 h-2.5 rounded-full bg-red-500 rec-dot"></span>
+                    REC <span id="recTimer">00:00</span>
+                </span>
+            </div>
+            <button id="btnMute" type="button" class="text-xs font-semibold px-3 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 transition">
+                🔊 Ovoz: Yoqilgan
+            </button>
+        </div>
+
+        <!-- 9:16 O'yin Canvas Sahnasi (Faqat shu joy videoga yoziladi!) -->
+        <div class="reels-wrapper relative rounded-2xl border border-gray-800 overflow-hidden">
+            <canvas id="gameCanvas" width="720" height="1280"></canvas>
+        </div>
+
+        <!-- Boshqaruv va Yozib olish tugmalari -->
+        <div class="w-full grid grid-cols-1 gap-2.5 mt-3">
+            <button id="btnStartRecord" type="button" class="w-full py-3.5 px-4 rounded-xl font-black text-sm sm:text-base uppercase tracking-wide bg-gradient-to-r from-red-600 via-rose-600 to-pink-600 hover:from-red-500 hover:to-pink-500 text-white shadow-lg shadow-red-900/40 flex items-center justify-center gap-2 transition active:scale-[0.99]">
+                <span class="w-3 h-3 rounded-full bg-white"></span>
+                <span>Boshlash va Videoga Yozish</span>
+            </button>
+
+            <div class="grid grid-cols-2 gap-2">
+                <button id="btnStartOnly" type="button" class="py-2.5 px-3 rounded-xl font-bold text-xs sm:text-sm bg-emerald-600 hover:bg-emerald-500 text-white shadow transition">
+                    ▶ Yozmasdan O'ynatish
+                </button>
+                <button id="btnStopReset" type="button" class="py-2.5 px-3 rounded-xl font-bold text-xs sm:text-sm bg-gray-800 hover:bg-gray-700 text-gray-200 border border-gray-700 transition">
+                    🔄 Qayta Tiklash
+                </button>
+            </div>
+        </div>
+
+        <!-- Tayyor videoni yuklab olish bloki -->
+        <div id="downloadPanel" class="hidden w-full mt-3 p-3.5 rounded-2xl bg-emerald-950/50 border border-emerald-500/50 flex-col gap-2">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-emerald-300">✅ Video tayyor! (9:16 HD)</span>
+                <span id="videoFormatLabel" class="text-[11px] text-emerald-400 font-mono"></span>
+            </div>
+            <a id="downloadLink" href="#" download="reels_game.webm" class="w-full py-2.5 px-4 rounded-xl font-extrabold text-center text-sm bg-emerald-500 hover:bg-emerald-400 text-gray-950 shadow transition">
+                📥 Videoni Yuklab Olish
+            </a>
+        </div>
+    </div>
+
+    <!-- O'NG / PASTKI QISM: SOZLAMALAR VA 6 XIL O'YIN KONSTRUKTORI (Videoga tushmaydi) -->
+    <div class="w-full max-w-2xl bg-gray-900/90 border border-gray-800 rounded-2xl p-4 sm:p-6 shadow-2xl flex flex-col gap-4">
+        <div class="border-b border-gray-800 pb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+                <h1 class="text-lg sm:text-xl font-black text-white tracking-tight">🎬 Reels & TikTok O'yin Studiyasi</h1>
+                <p class="text-xs text-gray-400">Bu panel videoga tushmaydi — faqat 9:16 o'yin sahnasi va ASMR zarba ovozlari yozib olinadi.</p>
+            </div>
+            <span class="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-blue-950 text-blue-300 border border-blue-800/60 self-start sm:self-auto">
+                720x1280 • 60 FPS
+            </span>
+        </div>
+
+        <!-- 1. O'yin rejimi va Tepada chiqadigan savol -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+                <label class="block text-xs font-bold text-gray-400 uppercase mb-1">O'yin Turi (6 xil Viral Rejim)</label>
+                <select id="selGameMode" class="w-full bg-gray-950 border border-gray-700 rounded-xl px-3 py-2.5 text-sm font-semibold text-white focus:outline-none focus:border-blue-500">
+                    <option value="floors">1. Qavatlarni Sindirish (Floor Breaker)</option>
+                    <option value="turf">2. Hudud Bosib Olish (Turf War 50% vs 50%)</option>
+                    <option value="rps">3. Tosh - Qaychi - Qog'oz (RPS Battle Royale)</option>
+                    <option value="boss">4. Gigant Bossni Yiqitish (Boss Raid VS)</option>
+                    <option value="plinko">5. Plinko Ko'paytirish Poygasi (Multiplier Gates)</option>
+                    <option value="rings">6. Aylana Qafasdan Qochish (Ring Escape)</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Tepadagi yozuv (Bo'sh qolsa ko'rinmaydi)</label>
+                <input type="text" id="inpHookText" value="" placeholder="Masalan: Qaysi biri yutadi? 👇" class="w-full bg-gray-950 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500">
+            </div>
+        </div>
+
+        <!-- Tayyor Ssenariylar (Presets) -->
+        <div>
+            <label class="block text-xs font-bold text-gray-400 uppercase mb-1.5">Tezkor Viral O'yinlar (Bir bosishda tanlash)</label>
+            <div class="flex flex-wrap gap-2">
+                <button type="button" onclick="applyPreset('screenshot')" class="text-xs bg-red-950/70 hover:bg-red-900/80 text-red-200 border border-red-700/50 px-3 py-2 rounded-lg font-semibold transition">
+                    📸 1. Qavatlar (X100 vs +300)
+                </button>
+                <button type="button" onclick="applyPreset('turfWar')" class="text-xs bg-emerald-950/70 hover:bg-emerald-900/80 text-emerald-200 border border-emerald-700/50 px-3 py-2 rounded-lg font-semibold transition">
+                    ⚔️ 2. Hudud Jangi (Turf War)
+                </button>
+                <button type="button" onclick="applyPreset('rpsRoyale')" class="text-xs bg-amber-950/70 hover:bg-amber-900/80 text-amber-200 border border-amber-700/50 px-3 py-2 rounded-lg font-semibold transition">
+                    🪨✂️📄 3. Tosh-Qaychi-Qog'oz
+                </button>
+                <button type="button" onclick="applyPreset('bossRaid')" class="text-xs bg-purple-950/70 hover:bg-purple-900/80 text-purple-200 border border-purple-700/50 px-3 py-2 rounded-lg font-semibold transition">
+                    👾 4. Gigant Bossga Hujum
+                </button>
+                <button type="button" onclick="applyPreset('plinkoRace')" class="text-xs bg-cyan-950/70 hover:bg-cyan-900/80 text-cyan-200 border border-cyan-700/50 px-3 py-2 rounded-lg font-semibold transition">
+                    🎰 5. Plinko Darvozalar (10.000 gacha)
+                </button>
+                <button type="button" onclick="applyPreset('ringEscape')" class="text-xs bg-blue-950/70 hover:bg-blue-900/80 text-blue-200 border border-blue-700/50 px-3 py-2 rounded-lg font-semibold transition">
+                    ⭕ 6. Aylana Qafasdan Qochish
+                </button>
+            </div>
+        </div>
+
+        <!-- 2. QIZIL VA KO'K TOMON SOZLAMALARI -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <!-- Chap tomon: QIZIL -->
+            <div class="p-3.5 rounded-xl bg-red-950/20 border border-red-500/40 flex flex-col gap-2.5">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-black uppercase tracking-wider text-red-400">🔴 Chap Tomon (Qizil)</span>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-[11px] text-gray-400 font-semibold">Tepa Yozuv (Badge)</label>
+                        <input type="text" id="redBadge" value="X100" class="w-full bg-gray-950 border border-gray-700 rounded-lg px-2.5 py-1.5 text-sm font-bold text-red-400">
+                    </div>
+                    <div>
+                        <label class="text-[11px] text-gray-400 font-semibold">Boshlang'ich To'plar</label>
+                        <input type="number" id="redCount" value="1" min="1" max="5000" class="w-full bg-gray-950 border border-gray-700 rounded-lg px-2.5 py-1.5 text-sm font-bold text-white">
+                    </div>
+                    <div>
+                        <label class="text-[11px] text-gray-400 font-semibold">Zarba Kuchi (Damage)</label>
+                        <input type="number" id="redPower" value="25" min="1" max="1000" class="w-full bg-gray-950 border border-gray-700 rounded-lg px-2.5 py-1.5 text-sm font-bold text-white">
+                    </div>
+                    <div>
+                        <label class="text-[11px] text-gray-400 font-semibold">To'p O'lchami (px)</label>
+                        <input type="number" id="redRadius" value="11" min="4" max="26" class="w-full bg-gray-950 border border-gray-700 rounded-lg px-2.5 py-1.5 text-sm font-bold text-white">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-[11px] text-gray-400 font-semibold">Qavat singanda / Bonus qoidasi</label>
+                    <select id="redFloorRule" class="w-full bg-gray-950 border border-gray-700 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-gray-200 mt-0.5">
+                        <option value="double" selected>To'plar soni 2 baravar ko'payadi (x2)</option>
+                        <option value="plus50">+50 ta to'p qo'shiladi</option>
+                        <option value="plus300">+300 ta to'p qo'shiladi</option>
+                        <option value="power2x">To'p zarba kuchi 2x oshadi</option>
+                        <option value="none">O'zgarmaydi (Faqat boshlang'ich to'plar)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- O'ng tomon: KO'K -->
+            <div class="p-3.5 rounded-xl bg-blue-950/20 border border-blue-500/40 flex flex-col gap-2.5">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-black uppercase tracking-wider text-blue-400">🔵 O'ng Tomon (Ko'k)</span>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-[11px] text-gray-400 font-semibold">Tepa Yozuv (Badge)</label>
+                        <input type="text" id="blueBadge" value="+300" class="w-full bg-gray-950 border border-gray-700 rounded-lg px-2.5 py-1.5 text-sm font-bold text-blue-400">
+                    </div>
+                    <div>
+                        <label class="text-[11px] text-gray-400 font-semibold">Boshlang'ich To'plar</label>
+                        <input type="number" id="blueCount" value="1500" min="1" max="5000" class="w-full bg-gray-950 border border-gray-700 rounded-lg px-2.5 py-1.5 text-sm font-bold text-white">
+                    </div>
+                    <div>
+                        <label class="text-[11px] text-gray-400 font-semibold">Zarba Kuchi (Damage)</label>
+                        <input type="number" id="bluePower" value="1" min="1" max="1000" class="w-full bg-gray-950 border border-gray-700 rounded-lg px-2.5 py-1.5 text-sm font-bold text-white">
+                    </div>
+                    <div>
+                        <label class="text-[11px] text-gray-400 font-semibold">To'p O'lchami (px)</label>
+                        <input type="number" id="blueRadius" value="5" min="4" max="26" class="w-full bg-gray-950 border border-gray-700 rounded-lg px-2.5 py-1.5 text-sm font-bold text-white">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-[11px] text-gray-400 font-semibold">Qavat singanda / Bonus qoidasi</label>
+                    <select id="blueFloorRule" class="w-full bg-gray-950 border border-gray-700 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-gray-200 mt-0.5">
+                        <option value="none">O'zgarmaydi (Faqat boshlang'ich to'plar)</option>
+                        <option value="plus300" selected>+300 ta to'p qo'shiladi</option>
+                        <option value="plus50">+50 ta to'p qo'shiladi</option>
+                        <option value="double">To'plar soni 2 baravar ko'payadi (x2)</option>
+                        <option value="power2x">To'p zarba kuchi 2x oshadi</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. QAVATLAR (FLOORS) VA FIZIKA TEZLIGI -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+                <label class="block text-xs font-bold text-gray-400 uppercase mb-1">10 ta Qavat Joni (Floor HP ro'yxati)</label>
+                <input type="text" id="inpFloorsHP" value="100, 500, 1000, 1500, 2000, 3000, 4000, 5000, 6000, 7000" class="w-full bg-gray-950 border border-gray-700 rounded-xl px-3 py-2 text-xs font-mono text-gray-200">
+            </div>
+            <div class="flex flex-col justify-between">
+                <div class="flex items-center justify-between">
+                    <label class="text-xs font-bold text-gray-400 uppercase">Simulyatsiya Tezligi</label>
+                    <span id="lblSpeed" class="text-xs font-extrabold text-blue-400">1.2x</span>
+                </div>
+                <input type="range" id="rngSpeed" min="0.6" max="2.5" step="0.1" value="1.2" class="w-full accent-blue-500 cursor-pointer my-1">
+                <label class="flex items-center gap-2 text-xs text-gray-300 cursor-pointer select-none">
+                    <input type="checkbox" id="chkAutoStop" checked class="accent-emerald-500 w-4 h-4 rounded">
+                    <span>G'olib chiqqanda videoni avtomatik tugatish (2 soniyadan so'ng)</span>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // 1. AUDIO SINTEZATOR VA MEDIA RECORDER
+        // ==========================================
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const W = canvas.width;   // 720
+        const H = canvas.height;  // 1280
+
+        let audioCtx = null;
+        let audioDest = null;
+        let soundEnabled = true;
+        let lastSoundTime = 0;
+
+        function ensureAudio() {
+            if (!audioCtx) {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AudioContextClass();
+                audioDest = audioCtx.createMediaStreamDestination();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        // ASMR zarba va g'alaba ovozlari (videoga ham yoziladi)
+        function playSound(type, sideKey) {
+            if (!soundEnabled || !audioCtx) return;
+            const now = performance.now();
+            if (type === 'hit' && now - lastSoundTime < 26) return;
+            lastSoundTime = now;
+
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                const t = audioCtx.currentTime;
+
+                if (type === 'hit') {
+                    osc.type = 'sine';
+                    const baseFreq = sideKey === 'red' ? 280 : 390;
+                    osc.frequency.setValueAtTime(baseFreq + Math.random() * 110, t);
+                    osc.frequency.exponentialRampToValueAtTime(110, t + 0.045);
+                    gain.gain.setValueAtTime(0.06, t);
+                    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.045);
+                    osc.start(t);
+                    osc.stop(t + 0.05);
+                } else if (type === 'break') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(520, t);
+                    osc.frequency.exponentialRampToValueAtTime(140, t + 0.18);
+                    gain.gain.setValueAtTime(0.22, t);
+                    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+                    osc.start(t);
+                    osc.stop(t + 0.19);
+                } else if (type === 'win') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(440, t);
+                    osc.frequency.setValueAtTime(554.37, t + 0.12);
+                    osc.frequency.setValueAtTime(659.25, t + 0.24);
+                    osc.frequency.setValueAtTime(880, t + 0.36);
+                    gain.gain.setValueAtTime(0.25, t);
+                    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.75);
+                    osc.start(t);
+                    osc.stop(t + 0.76);
+                }
+
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                if (audioDest) gain.connect(audioDest);
+            } catch (e) {
+                // Audio xatoliklarini o'tkazib yuborish
+            }
+        }
+
+        // ==========================================
+        // 2. O'YIN HOLATI VA GEOMETRIYASI
+        // ==========================================
+        let gameRunning = false;
+        let isRecording = false;
+        let mediaRecorder = null;
+        let recordedChunks = [];
+        let recStartTime = 0;
+        let recTimerInterval = null;
+        let autoStopTimeout = null;
+        let winnerSide = null;
+        let winFlashAlpha = 0;
+        let particles = [];
+
+        // Ustunlar o'lchami (rasmdagidek 9:16 formatda)
+        const BOX_TOP = 248;
+        const BOX_BOTTOM = 1236;
+        const BOX_HEIGHT = BOX_BOTTOM - BOX_TOP;
+        const LEFT_BOX = { x: 18, y: BOX_TOP, w: 334, h: BOX_HEIGHT };
+        const RIGHT_BOX = { x: 368, y: BOX_TOP, w: 334, h: BOX_HEIGHT };
+        const FULL_BOX = { x: 24, y: BOX_TOP, w: 672, h: BOX_HEIGHT };
+
+        let state = {
+            mode: 'floors',
+            speed: 1.2,
+            hookText: '',
+            red: null,
+            blue: null,
+            turf: null,
+            rps: null,
+            boss: null,
+            plinko: null
+        };
+
+        // Raqamlarni rasmdagi kabi nuqta bilan formatlash (masalan: 1500 -> 1.500)
+        function formatNumberDot(num) {
+            const n = Math.max(0, Math.round(num));
+            return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        }
+
+        function createSideConfig(sideKey, box) {
+            const isRed = sideKey === 'red';
+            const badge = document.getElementById(isRed ? 'redBadge' : 'blueBadge').value.trim();
+            const logicalBalls = Math.max(1, parseInt(document.getElementById(isRed ? 'redCount' : 'blueCount').value) || 1);
+            const power = Math.max(1, parseFloat(document.getElementById(isRed ? 'redPower' : 'bluePower').value) || 1);
+            const radius = Math.min(26, Math.max(4, parseFloat(document.getElementById(isRed ? 'redRadius' : 'blueRadius').value) || 7));
+            const floorRule = document.getElementById(isRed ? 'redFloorRule' : 'blueFloorRule').value;
+
+            // Qavatlar ro'yxati
+            const rawFloors = document.getElementById('inpFloorsHP').value.split(',');
+            const hpList = rawFloors.map(s => parseInt(s.trim())).filter(n => !isNaN(n) && n > 0);
+            if (hpList.length === 0) hpList.push(100, 500, 1000, 2000, 5000);
+
+            const totalFloors = hpList.length;
+            const floorGap = box.h / (totalFloors + 1);
+            const floors = hpList.map((hp, idx) => ({
+                index: idx,
+                y: box.y + floorGap * (idx + 1),
+                hp: hp,
+                maxHp: hp,
+                broken: false,
+                hitFlash: 0
+            }));
+
+            // Aylana qafaslar (Rings mode uchun)
+            const ringCount = Math.min(8, totalFloors);
+            const rings = [];
+            for (let i = 0; i < ringCount; i++) {
+                rings.push({
+                    index: i,
+                    radius: 36 + i * 17,
+                    angle: (i * 0.7),
+                    rotSpeed: (i % 2 === 0 ? 1 : -1) * (0.022 + i * 0.003),
+                    gapSize: 0.68,
+                    broken: false,
+                    color: isRed ? `hsl(${0 + i * 5}, 90%, ${55 - i * 2}%)` : `hsl(${215 + i * 5}, 95%, ${60 - i * 2}%)`
+                });
+            }
+
+            const sideObj = {
+                key: sideKey,
+                isRed: isRed,
+                box: box,
+                badge: badge,
+                logicalBalls: logicalBalls,
+                power: power,
+                radius: radius,
+                floorRule: floorRule,
+                floors: floors,
+                currentFloorIdx: 0,
+                rings: rings,
+                balls: [],
+                mainColor: isRed ? '#ff1e1e' : '#2563eb',
+                glowColor: isRed ? '#ff3b3b' : '#3b82f6',
+                barFill: isRed ? '#e11d48' : '#1d4ed8',
+                activeBarFill: isRed ? '#ff2a2a' : '#93c5fd'
+            };
+
+            syncSimulatedBalls(sideObj, true);
+            return sideObj;
+        }
+
+        // Fizik to'plar sonini boshqarish (60 FPS ravon ishlashi uchun 420 tagacha vizual to'p)
+        function syncSimulatedBalls(side, isInitial = false) {
+            const MAX_VISUAL_BALLS = state.mode === 'rings' ? 90 : 420;
+            const targetVisual = Math.min(side.logicalBalls, MAX_VISUAL_BALLS);
+
+            // Birinchi faol qavatni topish
+            const activeFloor = side.floors.find(f => !f.broken);
+            const maxSpawnY = activeFloor ? Math.max(side.box.y + 30, activeFloor.y - side.radius - 6) : (side.box.y + 120);
+
+            while (side.balls.length < targetVisual) {
+                let spawnX, spawnY, vx, vy;
+                if (state.mode === 'rings') {
+                    const cx = side.box.x + side.box.w / 2;
+                    const cy = side.box.y + side.box.h * 0.36;
+                    spawnX = cx + (Math.random() - 0.5) * 18;
+                    spawnY = cy + (Math.random() - 0.5) * 18;
+                    const ang = Math.random() * Math.PI * 2;
+                    const spd = 4.5 + Math.random() * 2.5;
+                    vx = Math.cos(ang) * spd;
+                    vy = Math.sin(ang) * spd;
+                } else {
+                    if (!isInitial && side.balls.length > 0) {
+                        const refBall = side.balls[Math.floor(Math.random() * side.balls.length)];
+                        spawnX = Math.min(side.box.x + side.box.w - side.radius - 4, Math.max(side.box.x + side.radius + 4, refBall.x + (Math.random() - 0.5) * 20));
+                        spawnY = Math.min(maxSpawnY, Math.max(side.box.y + side.radius + 4, refBall.y - Math.random() * 25));
+                    } else {
+                        spawnX = side.box.x + side.radius + 8 + Math.random() * (side.box.w - side.radius * 2 - 16);
+                        spawnY = side.box.y + side.radius + 8 + Math.random() * Math.max(15, (maxSpawnY - side.box.y - 24));
+                    }
+                    vx = (Math.random() - 0.5) * 7;
+                    vy = (Math.random() - 0.5) * 5;
+                }
+
+                side.balls.push({
+                    x: spawnX,
+                    y: spawnY,
+                    vx: vx,
+                    vy: vy,
+                    trail: []
+                });
+            }
+
+            if (side.balls.length > targetVisual) {
+                side.balls.length = targetVisual;
+            }
+        }
+
+        // ==========================================
+        // YANGI REJIMLAR INIT FUNKSIYALARI
+        // ==========================================
+
+        // REJIM 2: HUDUD BOSIB OLISH (TURF WAR)
+        function initTurfMode() {
+            const cols = 28;
+            const rows = 42;
+            const cellW = FULL_BOX.w / cols;
+            const cellH = FULL_BOX.h / rows;
+            const grid = [];
+
+            for (let r = 0; r < rows; r++) {
+                const row = [];
+                for (let c = 0; c < cols; c++) {
+                    row.push(c < cols / 2 ? 0 : 1); // 0 = Qizil, 1 = Ko'k
+                }
+                grid.push(row);
+            }
+
+            const redCount = Math.min(80, Math.max(1, parseInt(document.getElementById('redCount').value) || 8));
+            const blueCount = Math.min(80, Math.max(1, parseInt(document.getElementById('blueCount').value) || 8));
+            const redRadius = Math.min(20, Math.max(5, parseFloat(document.getElementById('redRadius').value) || 10));
+            const blueRadius = Math.min(20, Math.max(5, parseFloat(document.getElementById('blueRadius').value) || 10));
+            const redSpeed = 7.5;
+            const blueSpeed = 7.5;
+
+            const balls = [];
+            for (let i = 0; i < redCount; i++) {
+                const ang = (Math.random() - 0.5) * 1.4;
+                balls.push({
+                    team: 0,
+                    x: FULL_BOX.x + 30 + Math.random() * (FULL_BOX.w * 0.35),
+                    y: FULL_BOX.y + 40 + Math.random() * (FULL_BOX.h - 80),
+                    vx: Math.cos(ang) * redSpeed,
+                    vy: Math.sin(ang) * redSpeed,
+                    r: redRadius
+                });
+            }
+            for (let i = 0; i < blueCount; i++) {
+                const ang = Math.PI + (Math.random() - 0.5) * 1.4;
+                balls.push({
+                    team: 1,
+                    x: FULL_BOX.x + FULL_BOX.w * 0.6 + Math.random() * (FULL_BOX.w * 0.35),
+                    y: FULL_BOX.y + 40 + Math.random() * (FULL_BOX.h - 80),
+                    vx: Math.cos(ang) * blueSpeed,
+                    vy: Math.sin(ang) * blueSpeed,
+                    r: blueRadius
+                });
+            }
+
+            state.turf = {
+                cols, rows, cellW, cellH, grid, balls,
+                redCells: (cols * rows) / 2,
+                blueCells: (cols * rows) / 2,
+                totalCells: cols * rows
+            };
+        }
+
+        // REJIM 3: TOSH - QAYCHI - QOG'OZ (RPS BATTLE ROYALE)
+        function initRpsMode() {
+            const perTeamCount = Math.min(45, Math.max(5, parseInt(document.getElementById('redCount').value) || 22));
+            const items = [];
+            const types = [
+                { id: 0, emoji: '🪨', name: 'ROCK', color: '#ef4444' },
+                { id: 1, emoji: '📄', name: 'PAPER', color: '#3b82f6' },
+                { id: 2, emoji: '✂️', name: 'SCISSORS', color: '#eab308' }
+            ];
+
+            for (let t = 0; t < 3; t++) {
+                for (let i = 0; i < perTeamCount; i++) {
+                    const ang = Math.random() * Math.PI * 2;
+                    const spd = 2.6 + Math.random() * 2.0;
+                    const baseX = t === 0 ? FULL_BOX.x + 150 : (t === 1 ? FULL_BOX.x + FULL_BOX.w - 150 : FULL_BOX.x + FULL_BOX.w / 2);
+                    const baseY = t === 2 ? FULL_BOX.y + FULL_BOX.h - 180 : FULL_BOX.y + 200;
+
+                    items.push({
+                        type: t,
+                        x: Math.min(FULL_BOX.x + FULL_BOX.w - 30, Math.max(FULL_BOX.x + 30, baseX + (Math.random() - 0.5) * 180)),
+                        y: Math.min(FULL_BOX.y + FULL_BOX.h - 30, Math.max(FULL_BOX.y + 30, baseY + (Math.random() - 0.5) * 180)),
+                        vx: Math.cos(ang) * spd,
+                        vy: Math.sin(ang) * spd,
+                        r: 17,
+                        cooldown: 0
+                    });
+                }
+            }
+
+            state.rps = { items, types, counts: [perTeamCount, perTeamCount, perTeamCount] };
+        }
+
+        // REJIM 4: GIGANT BOSSNI YIQITISH (BOSS RAID VS)
+        function initBossMode() {
+            const rawFloors = document.getElementById('inpFloorsHP').value.split(',');
+            const hpList = rawFloors.map(s => parseInt(s.trim())).filter(n => !isNaN(n) && n > 0);
+            const bossMaxHp = hpList.reduce((a, b) => a + b, 0) || 25000;
+
+            const makeBossSide = (sideObj) => {
+                return {
+                    x: sideObj.box.x + sideObj.box.w / 2,
+                    y: sideObj.box.y + sideObj.box.h * 0.54,
+                    vx: 2.2 * (sideObj.isRed ? 1 : -1),
+                    vy: 1.4,
+                    r: 68,
+                    hp: bossMaxHp,
+                    maxHp: bossMaxHp,
+                    hitFlash: 0,
+                    spawnCounter: 0
+                };
+            };
+
+            state.boss = {
+                redBoss: makeBossSide(state.red),
+                blueBoss: makeBossSide(state.blue)
+            };
+        }
+
+        // REJIM 5: PLINKO KO'PAYTIRISH POYGASI (MULTIPLIER GATES)
+        function initPlinkoMode() {
+            const targetGoal = 10000;
+
+            const setupPlinkoColumn = (sideObj) => {
+                const box = sideObj.box;
+                const pegs = [];
+                const rows = 7;
+                for (let r = 0; r < rows; r++) {
+                    const cols = r % 2 === 0 ? 5 : 4;
+                    const y = box.y + 115 + r * 66;
+                    const spacing = box.w / (cols + 1);
+                    for (let c = 1; c <= cols; c++) {
+                        pegs.push({
+                            x: box.x + spacing * c,
+                            y: y,
+                            r: 6,
+                            flash: 0
+                        });
+                    }
+                }
+
+                const gates = [
+                    { y: box.y + 610, w: 120, h: 28, x: box.x + 20, vx: 2.2, label: 'X2', type: 'mul', val: 2, color: '#10b981' },
+                    { y: box.y + 720, w: 130, h: 28, x: box.x + 150, vx: -2.6, label: '+25', type: 'add', val: 25, color: '#f59e0b' }
+                ];
+
+                return {
+                    pegs,
+                    gates,
+                    score: sideObj.logicalBalls,
+                    target: targetGoal,
+                    spawnTimer: 0
+                };
+            };
+
+            state.plinko = {
+                red: setupPlinkoColumn(state.red),
+                blue: setupPlinkoColumn(state.blue)
+            };
+        }
+
+        // O'yinni qayta tiklash / sozlamalarni yuklash
+        function initGame() {
+            if (autoStopTimeout) {
+                clearTimeout(autoStopTimeout);
+                autoStopTimeout = null;
+            }
+            state.mode = document.getElementById('selGameMode').value;
+            state.speed = parseFloat(document.getElementById('rngSpeed').value) || 1.2;
+            state.hookText = document.getElementById('inpHookText').value.trim();
+
+            state.red = createSideConfig('red', LEFT_BOX);
+            state.blue = createSideConfig('blue', RIGHT_BOX);
+
+            if (state.mode === 'turf') initTurfMode();
+            if (state.mode === 'rps') initRpsMode();
+            if (state.mode === 'boss') initBossMode();
+            if (state.mode === 'plinko') initPlinkoMode();
+
+            winnerSide = null;
+            winFlashAlpha = 0;
+            particles = [];
+        }
+
+        // ==========================================
+        // 3. FIZIKA YANGILANISHI (HAR KADRDA)
+        // ==========================================
+        function applyFloorRuleBonus(side) {
+            if (side.floorRule === 'double') {
+                side.logicalBalls = Math.min(999999, side.logicalBalls * 2);
+            } else if (side.floorRule === 'plus50') {
+                side.logicalBalls += 50;
+            } else if (side.floorRule === 'plus300') {
+                side.logicalBalls += 300;
+            } else if (side.floorRule === 'power2x') {
+                side.power *= 2;
+            }
+            syncSimulatedBalls(side, false);
+        }
+
+        function spawnFloorBreakParticles(x, y, w, color) {
+            for (let i = 0; i < 28; i++) {
+                particles.push({
+                    x: x + Math.random() * w,
+                    y: y + (Math.random() - 0.5) * 10,
+                    vx: (Math.random() - 0.5) * 9,
+                    vy: (Math.random() - 0.5) * 9 - 2,
+                    size: 3 + Math.random() * 5,
+                    alpha: 1,
+                    color: color
+                });
+            }
+        }
+
+        function updateSideFloorsMode(side) {
+            const box = side.box;
+            const r = side.radius;
+            const spd = state.speed;
+            const gravity = 0.25 * spd;
+
+            const activeFloor = side.floors.find(f => !f.broken);
+            side.currentFloorIdx = activeFloor ? activeFloor.index : side.floors.length;
+
+            // Agar vizual to'plar mantiqiy to'plardan kam bo'lsa, har bir to'pning zarbasi proporsional kuchayadi
+            const weightRatio = Math.max(1, side.logicalBalls / Math.max(1, side.balls.length));
+
+            for (let i = 0; i < side.balls.length; i++) {
+                const b = side.balls[i];
+
+                if (side.balls.length <= 15) {
+                    b.trail.push({ x: b.x, y: b.y });
+                    if (b.trail.length > 8) b.trail.shift();
+                } else if (b.trail.length > 0) {
+                    b.trail.length = 0;
+                }
+
+                b.vy += gravity;
+                if (b.vy > 13.5) b.vy = 13.5;
+
+                b.x += b.vx * spd;
+                b.y += b.vy * spd;
+
+                // Chap va o'ng devorlar
+                if (b.x - r < box.x + 4) {
+                    b.x = box.x + 4 + r;
+                    b.vx = Math.abs(b.vx) * 0.98 + 0.4;
+                } else if (b.x + r > box.x + box.w - 4) {
+                    b.x = box.x + box.w - 4 - r;
+                    b.vx = -Math.abs(b.vx) * 0.98 - 0.4;
+                }
+
+                // Tepa shift
+                if (b.y - r < box.y + 4) {
+                    b.y = box.y + 4 + r;
+                    b.vy = Math.abs(b.vy) * 0.95 + 1.2;
+                }
+
+                // Faol qavat bilan to'qnashuv
+                if (activeFloor && !activeFloor.broken) {
+                    const floorTop = activeFloor.y - 11;
+                    if (b.y + r >= floorTop) {
+                        b.y = floorTop - r;
+                        const bounceVel = 6.2 + Math.random() * 4.2;
+                        b.vy = -bounceVel;
+                        b.vx += (Math.random() - 0.5) * 3.0;
+                        if (Math.abs(b.vx) > 8.5) b.vx *= 0.8;
+
+                        const dmg = side.power * weightRatio;
+                        activeFloor.hp -= dmg;
+                        activeFloor.hitFlash = 1.0;
+                        playSound('hit', side.key);
+
+                        if (activeFloor.hp <= 0) {
+                            activeFloor.hp = 0;
+                            activeFloor.broken = true;
+                            playSound('break', side.key);
+                            spawnFloorBreakParticles(box.x + 10, activeFloor.y, box.w - 20, side.glowColor);
+                            applyFloorRuleBonus(side);
+
+                            if (activeFloor.index === side.floors.length - 1 && !winnerSide) {
+                                triggerWinner(side.key);
+                            }
+                            break;
+                        }
+                    }
+                } else {
+                    // Barcha qavatlar singanda pastki devor
+                    if (b.y + r > box.y + box.h - 6) {
+                        b.y = box.y + box.h - 6 - r;
+                        b.vy = -Math.abs(b.vy) * 0.85;
+                    }
+                }
+            }
+
+            for (let f of side.floors) {
+                if (f.hitFlash > 0) f.hitFlash = Math.max(0, f.hitFlash - 0.12);
+            }
+        }
+
+        // REJIM 6: AYLANA QAFASDAN QOCHISH (RING ESCAPE)
+        function updateSideRingsMode(side) {
+            const box = side.box;
+            const cx = box.x + box.w / 2;
+            const cy = box.y + box.h * 0.36;
+            const r = side.radius;
+            const spd = state.speed;
+
+            for (let rg of side.rings) {
+                if (!rg.broken) {
+                    rg.angle = (rg.angle + rg.rotSpeed * spd) % (Math.PI * 2);
+                    if (rg.angle < 0) rg.angle += Math.PI * 2;
+                }
+            }
+
+            const activeRing = side.rings.find(rg => !rg.broken);
+            side.currentFloorIdx = activeRing ? activeRing.index : side.rings.length;
+
+            for (let i = 0; i < side.balls.length; i++) {
+                const b = side.balls[i];
+                b.vy += 0.14 * spd;
+                b.x += b.vx * spd;
+                b.y += b.vy * spd;
+
+                if (b.x - r < box.x + 4) { b.x = box.x + 4 + r; b.vx = Math.abs(b.vx); }
+                if (b.x + r > box.x + box.w - 4) { b.x = box.x + box.w - 4 - r; b.vx = -Math.abs(b.vx); }
+                if (b.y - r < box.y + 4) { b.y = box.y + 4 + r; b.vy = Math.abs(b.vy); }
+                if (b.y + r > box.y + box.h - 4) { b.y = box.y + box.h - 4 - r; b.vy = -Math.abs(b.vy) * 0.9; }
+
+                if (activeRing) {
+                    const dx = b.x - cx;
+                    const dy = b.y - cy;
+                    const dist = Math.hypot(dx, dy);
+
+                    if (dist + r >= activeRing.radius) {
+                        let ballAngle = Math.atan2(dy, dx);
+                        if (ballAngle < 0) ballAngle += Math.PI * 2;
+
+                        let diff = Math.abs(ballAngle - activeRing.angle);
+                        if (diff > Math.PI) diff = Math.PI * 2 - diff;
+
+                        if (diff < activeRing.gapSize * 0.5) {
+                            activeRing.broken = true;
+                            playSound('break', side.key);
+                            spawnFloorBreakParticles(cx - activeRing.radius, cy, activeRing.radius * 2, activeRing.color);
+                            applyFloorRuleBonus(side);
+
+                            b.x = cx + (Math.random() - 0.5) * 14;
+                            b.y = cy + (Math.random() - 0.5) * 14;
+
+                            if (activeRing.index === side.rings.length - 1 && !winnerSide) {
+                                triggerWinner(side.key);
+                            }
+                            break;
+                        } else {
+                            const nx = dx / (dist || 1);
+                            const ny = dy / (dist || 1);
+                            b.x = cx + nx * (activeRing.radius - r - 1);
+                            b.y = cy + ny * (activeRing.radius - r - 1);
+
+                            const dot = b.vx * nx + b.vy * ny;
+                            b.vx = (b.vx - 2 * dot * nx) + (Math.random() - 0.5) * 1.2;
+                            b.vy = (b.vy - 2 * dot * ny) + (Math.random() - 0.5) * 1.2;
+                            const mag = Math.hypot(b.vx, b.vy) || 1;
+                            const targetSpd = Math.min(8.5, Math.max(5.2, mag));
+                            b.vx = (b.vx / mag) * targetSpd;
+                            b.vy = (b.vy / mag) * targetSpd;
+                            playSound('hit', side.key);
+                        }
+                    }
+                }
+            }
+        }
+
+        // YANGI REJIMLAR FIZIKASI
+        function updateTurfMode() {
+            const tf = state.turf;
+            if (!tf) return;
+            const spd = state.speed;
+
+            for (let b of tf.balls) {
+                b.x += b.vx * spd;
+                b.y += b.vy * spd;
+
+                if (b.x - b.r < FULL_BOX.x + 3) { b.x = FULL_BOX.x + 3 + b.r; b.vx = Math.abs(b.vx); }
+                if (b.x + b.r > FULL_BOX.x + FULL_BOX.w - 3) { b.x = FULL_BOX.x + FULL_BOX.w - 3 - b.r; b.vx = -Math.abs(b.vx); }
+                if (b.y - b.r < FULL_BOX.y + 3) { b.y = FULL_BOX.y + 3 + b.r; b.vy = Math.abs(b.vy); }
+                if (b.y + b.r > FULL_BOX.y + FULL_BOX.h - 3) { b.y = FULL_BOX.y + FULL_BOX.h - 3 - b.r; b.vy = -Math.abs(b.vy); }
+
+                const checkAngles = [0, Math.PI / 2, Math.PI, Math.PI * 1.5];
+                for (let ang of checkAngles) {
+                    const px = b.x + Math.cos(ang) * b.r;
+                    const py = b.y + Math.sin(ang) * b.r;
+                    const col = Math.floor((px - FULL_BOX.x) / tf.cellW);
+                    const row = Math.floor((py - FULL_BOX.y) / tf.cellH);
+
+                    if (row >= 0 && row < tf.rows && col >= 0 && col < tf.cols) {
+                        if (tf.grid[row][col] !== b.team) {
+                            tf.grid[row][col] = b.team;
+                            if (ang === 0 || ang === Math.PI) b.vx = -b.vx + (Math.random() - 0.5) * 0.8;
+                            else b.vy = -b.vy + (Math.random() - 0.5) * 0.8;
+
+                            playSound('hit', b.team === 0 ? 'red' : 'blue');
+                            break;
+                        }
+                    }
+                }
+            }
+
+            let rCount = 0;
+            for (let r = 0; r < tf.rows; r++) {
+                for (let c = 0; c < tf.cols; c++) {
+                    if (tf.grid[r][c] === 0) rCount++;
+                }
+            }
+            tf.redCells = rCount;
+            tf.blueCells = tf.totalCells - rCount;
+
+            if (!winnerSide) {
+                if (tf.redCells >= tf.totalCells * 0.92) triggerWinner('red');
+                else if (tf.blueCells >= tf.totalCells * 0.92) triggerWinner('blue');
+            }
+        }
+
+        function updateRpsMode() {
+            const rps = state.rps;
+            if (!rps) return;
+            const spd = state.speed;
+            const items = rps.items;
+
+            for (let i = 0; i < items.length; i++) {
+                const a = items[i];
+                if (a.cooldown > 0) a.cooldown--;
+
+                const preyType = (a.type + 2) % 3;
+                let nearestDist = 999999;
+                let target = null;
+                for (let j = 0; j < items.length; j++) {
+                    if (items[j].type === preyType) {
+                        const d = Math.hypot(items[j].x - a.x, items[j].y - a.y);
+                        if (d < nearestDist) { nearestDist = d; target = items[j]; }
+                    }
+                }
+                if (target && nearestDist > 1) {
+                    a.vx += ((target.x - a.x) / nearestDist) * 0.08 * spd;
+                    a.vy += ((target.y - a.y) / nearestDist) * 0.08 * spd;
+                }
+
+                const mag = Math.hypot(a.vx, a.vy) || 1;
+                const maxSpd = 3.6;
+                if (mag > maxSpd) {
+                    a.vx = (a.vx / mag) * maxSpd;
+                    a.vy = (a.vy / mag) * maxSpd;
+                }
+
+                a.x += a.vx * spd;
+                a.y += a.vy * spd;
+
+                if (a.x - a.r < FULL_BOX.x + 6) { a.x = FULL_BOX.x + 6 + a.r; a.vx = Math.abs(a.vx); }
+                if (a.x + a.r > FULL_BOX.x + FULL_BOX.w - 6) { a.x = FULL_BOX.x + FULL_BOX.w - 6 - a.r; a.vx = -Math.abs(a.vx); }
+                if (a.y - a.r < FULL_BOX.y + 6) { a.y = FULL_BOX.y + 6 + a.r; a.vy = Math.abs(a.vy); }
+                if (a.y + a.r > FULL_BOX.y + FULL_BOX.h - 6) { a.y = FULL_BOX.y + FULL_BOX.h - 6 - a.r; a.vy = -Math.abs(a.vy); }
+            }
+
+            for (let i = 0; i < items.length; i++) {
+                for (let j = i + 1; j < items.length; j++) {
+                    const a = items[i];
+                    const b = items[j];
+                    const dx = b.x - a.x;
+                    const dy = b.y - a.y;
+                    const dist = Math.hypot(dx, dy);
+
+                    if (dist < a.r + b.r && dist > 0) {
+                        const nx = dx / dist;
+                        const ny = dy / dist;
+                        const overlap = (a.r + b.r - dist) * 0.5;
+                        a.x -= nx * overlap;
+                        a.y -= ny * overlap;
+                        b.x += nx * overlap;
+                        b.y += ny * overlap;
+
+                        const tx = a.vx; const ty = a.vy;
+                        a.vx = b.vx; a.vy = b.vy;
+                        b.vx = tx; b.vy = ty;
+
+                        if (a.type !== b.type && a.cooldown === 0 && b.cooldown === 0) {
+                            if ((a.type === 0 && b.type === 2) || (a.type === 1 && b.type === 0) || (a.type === 2 && b.type === 1)) {
+                                b.type = a.type;
+                                b.cooldown = 12;
+                                spawnFloorBreakParticles(b.x - 10, b.y, 20, rps.types[a.type].color);
+                                playSound('hit', a.type === 0 ? 'red' : 'blue');
+                            } else {
+                                a.type = b.type;
+                                a.cooldown = 12;
+                                spawnFloorBreakParticles(a.x - 10, a.y, 20, rps.types[b.type].color);
+                                playSound('hit', b.type === 0 ? 'red' : 'blue');
+                            }
+                        }
+                    }
+                }
+            }
+
+            const counts = [0, 0, 0];
+            for (let it of items) counts[it.type]++;
+            rps.counts = counts;
+
+            if (!winnerSide) {
+                if (counts[0] === items.length) triggerWinner('rock');
+                else if (counts[1] === items.length) triggerWinner('paper');
+                else if (counts[2] === items.length) triggerWinner('scissors');
+            }
+        }
+
+        function updateBossSide(side, boss) {
+            if (boss.hp <= 0) return;
+            const box = side.box;
+            const spd = state.speed;
+
+            boss.x += boss.vx * spd;
+            boss.y += boss.vy * spd;
+            if (boss.x - boss.r < box.x + 12) { boss.x = box.x + 12 + boss.r; boss.vx = Math.abs(boss.vx); }
+            if (boss.x + boss.r > box.x + box.w - 12) { boss.x = box.x + box.w - 12 - boss.r; boss.vx = -Math.abs(boss.vx); }
+            if (boss.y - boss.r < box.y + 180) { boss.y = box.y + 180 + boss.r; boss.vy = Math.abs(boss.vy); }
+            if (boss.y + boss.r > box.y + box.h - 40) { boss.y = box.y + box.h - 40 - boss.r; boss.vy = -Math.abs(boss.vy); }
+
+            if (boss.hitFlash > 0) boss.hitFlash = Math.max(0, boss.hitFlash - 0.1);
+
+            const weightRatio = Math.max(1, side.logicalBalls / Math.max(1, side.balls.length));
+            const r = side.radius;
+
+            for (let b of side.balls) {
+                if (side.balls.length <= 20) {
+                    b.trail.push({ x: b.x, y: b.y });
+                    if (b.trail.length > 8) b.trail.shift();
+                }
+
+                b.vy += 0.2 * spd;
+                b.x += b.vx * spd;
+                b.y += b.vy * spd;
+
+                if (b.x - r < box.x + 4) { b.x = box.x + 4 + r; b.vx = Math.abs(b.vx); }
+                if (b.x + r > box.x + box.w - 4) { b.x = box.x + box.w - 4 - r; b.vx = -Math.abs(b.vx); }
+                if (b.y - r < box.y + 4) { b.y = box.y + 4 + r; b.vy = Math.abs(b.vy); }
+                if (b.y + r > box.y + box.h - 4) { b.y = box.y + box.h - 4 - r; b.vy = -Math.abs(b.vy) * 0.92; }
+
+                const dx = b.x - boss.x;
+                const dy = b.y - boss.y;
+                const dist = Math.hypot(dx, dy);
+                if (dist < r + boss.r && dist > 0) {
+                    const nx = dx / dist;
+                    const ny = dy / dist;
+                    b.x = boss.x + nx * (boss.r + r + 2);
+                    b.y = boss.y + ny * (boss.r + r + 2);
+
+                    const speedMag = Math.max(7.5, Math.hypot(b.vx, b.vy));
+                    b.vx = nx * speedMag + (Math.random() - 0.5) * 2;
+                    b.vy = ny * speedMag;
+
+                    boss.hp -= side.power * weightRatio;
+                    boss.hitFlash = 1.0;
+                    boss.spawnCounter++;
+                    playSound('hit', side.key);
+
+                    if (boss.spawnCounter % 25 === 0) {
+                        applyFloorRuleBonus(side);
+                    }
+
+                    if (boss.hp <= 0) {
+                        boss.hp = 0;
+                        playSound('break', side.key);
+                        spawnFloorBreakParticles(boss.x - boss.r, boss.y, boss.r * 2, '#fbbf24');
+                        if (!winnerSide) triggerWinner(side.key);
+                        break;
+                    }
+                }
+            }
+        }
+
+        function updatePlinkoSide(side, pData) {
+            const box = side.box;
+            const spd = state.speed;
+            const r = side.radius;
+
+            for (let g of pData.gates) {
+                g.x += g.vx * spd;
+                if (g.x < box.x + 8) { g.x = box.x + 8; g.vx = Math.abs(g.vx); }
+                if (g.x + g.w > box.x + box.w - 8) { g.x = box.x + box.w - 8 - g.w; g.vx = -Math.abs(g.vx); }
+            }
+
+            for (let pg of pData.pegs) {
+                if (pg.flash > 0) pg.flash = Math.max(0, pg.flash - 0.1);
+            }
+
+            pData.spawnTimer += spd;
+            if (side.balls.length < 350 && pData.spawnTimer > 8) {
+                pData.spawnTimer = 0;
+                side.balls.push({
+                    x: box.x + box.w / 2 + (Math.random() - 0.5) * 60,
+                    y: box.y + 20,
+                    vx: (Math.random() - 0.5) * 2,
+                    vy: 2,
+                    passedGates: {},
+                    trail: []
+                });
+            }
+
+            for (let i = side.balls.length - 1; i >= 0; i--) {
+                const b = side.balls[i];
+                if (!b.passedGates) b.passedGates = {};
+
+                b.vy += 0.22 * spd;
+                if (b.vy > 10) b.vy = 10;
+                b.x += b.vx * spd;
+                b.y += b.vy * spd;
+
+                if (b.x - r < box.x + 4) { b.x = box.x + 4 + r; b.vx = Math.abs(b.vx) * 0.8; }
+                if (b.x + r > box.x + box.w - 4) { b.x = box.x + box.w - 4 - r; b.vx = -Math.abs(b.vx) * 0.8; }
+
+                for (let pg of pData.pegs) {
+                    const dx = b.x - pg.x;
+                    const dy = b.y - pg.y;
+                    const dist = Math.hypot(dx, dy);
+                    if (dist < r + pg.r && dist > 0) {
+                        const nx = dx / dist;
+                        const ny = dy / dist;
+                        b.x = pg.x + nx * (r + pg.r + 1);
+                        b.y = pg.y + ny * (r + pg.r + 1);
+                        b.vx = nx * 3.5 + (Math.random() - 0.5) * 1.5;
+                        b.vy = Math.max(-4, ny * 3.5);
+                        pg.flash = 1.0;
+                        playSound('hit', side.key);
+                    }
+                }
+
+                pData.gates.forEach((g, gIdx) => {
+                    if (!b.passedGates[gIdx] && b.y >= g.y && b.y <= g.y + g.h && b.x >= g.x && b.x <= g.x + g.w) {
+                        b.passedGates[gIdx] = true;
+                        playSound('break', side.key);
+
+                        if (g.type === 'mul' && side.balls.length < 480) {
+                            side.balls.push({
+                                x: b.x + (Math.random() - 0.5) * 10,
+                                y: b.y + 5,
+                                vx: -b.vx + (Math.random() - 0.5) * 3,
+                                vy: b.vy,
+                                passedGates: { ...b.passedGates },
+                                trail: []
+                            });
+                            side.logicalBalls += Math.max(1, Math.round(side.power));
+                        } else if (g.type === 'add') {
+                            side.logicalBalls += g.val;
+                        }
+                    }
+                });
+
+                if (b.y + r >= box.y + box.h - 28) {
+                    side.logicalBalls += Math.max(1, Math.round(side.power * 2));
+                    b.y = box.y + 18;
+                    b.x = box.x + box.w / 2 + (Math.random() - 0.5) * 90;
+                    b.vx = (Math.random() - 0.5) * 2.5;
+                    b.vy = 1.5;
+                    b.passedGates = {};
+
+                    if (side.logicalBalls >= pData.target && !winnerSide) {
+                        side.logicalBalls = pData.target;
+                        triggerWinner(side.key);
+                    }
+                }
+            }
+        }
+
+        function triggerWinner(sideKey) {
+            winnerSide = sideKey;
+            winFlashAlpha = 1.0;
+            playSound('win', sideKey);
+
+            if (isRecording && document.getElementById('chkAutoStop').checked) {
+                autoStopTimeout = setTimeout(() => {
+                    if (isRecording) stopRecordingAndGame();
+                }, 2200);
+            }
+        }
+
+        function updatePhysics() {
+            if (!gameRunning) return;
+
+            if (state.mode === 'floors') {
+                updateSideFloorsMode(state.red);
+                updateSideFloorsMode(state.blue);
+            } else if (state.mode === 'rings') {
+                updateSideRingsMode(state.red);
+                updateSideRingsMode(state.blue);
+            } else if (state.mode === 'turf') {
+                updateTurfMode();
+            } else if (state.mode === 'rps') {
+                updateRpsMode();
+            } else if (state.mode === 'boss') {
+                updateBossSide(state.red, state.boss.redBoss);
+                updateBossSide(state.blue, state.boss.blueBoss);
+            } else if (state.mode === 'plinko') {
+                updatePlinkoSide(state.red, state.plinko.red);
+                updatePlinkoSide(state.blue, state.plinko.blue);
+            }
+
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.25;
+                p.alpha -= 0.032;
+                if (p.alpha <= 0) particles.splice(i, 1);
+            }
+
+            if (winFlashAlpha > 0) {
+                winFlashAlpha = Math.max(0, winFlashAlpha - 0.025);
+            }
+        }
+
+        // ==========================================
+        // 4. REELS SAHNASINI CHIZISH (720x1280 CANVAS)
+        // ==========================================
+        function drawScene() {
+            ctx.fillStyle = '#030305';
+            ctx.fillRect(0, 0, W, H);
+
+            if (state.hookText) {
+                ctx.save();
+                ctx.font = '800 28px Inter, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillStyle = '#ffffff';
+                ctx.shadowColor = 'rgba(255,255,255,0.4)';
+                ctx.shadowBlur = 12;
+                ctx.fillText(state.hookText, W / 2, 68);
+                ctx.restore();
+            }
+
+            if (state.mode === 'turf') {
+                drawTurfScene();
+            } else if (state.mode === 'rps') {
+                drawRpsScene();
+            } else {
+                ctx.save();
+                ctx.font = '900 44px Inter, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillStyle = '#ffffff';
+                ctx.shadowColor = '#ffffff';
+                ctx.shadowBlur = 22;
+                ctx.fillText('VS', W / 2, 185);
+                ctx.restore();
+
+                drawSideColumn(state.red);
+                drawSideColumn(state.blue);
+            }
+
+            for (let p of particles) {
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, p.alpha);
+                ctx.fillStyle = p.color;
+                ctx.shadowColor = p.color;
+                ctx.shadowBlur = 8;
+                ctx.fillRect(p.x, p.y, p.size, p.size);
+                ctx.restore();
+            }
+
+            if (winnerSide) {
+                const isFullArena = (state.mode === 'turf' || state.mode === 'rps');
+                const isRedWin = winnerSide === 'red' || winnerSide === 'rock';
+                const winBox = isFullArena ? FULL_BOX : (isRedWin ? LEFT_BOX : RIGHT_BOX);
+
+                let winColor = isRedWin ? '#ef4444' : '#3b82f6';
+                let winLabel = isRedWin ? '🔴 RED WINS!' : '🔵 BLUE WINS!';
+
+                if (winnerSide === 'rock') { winColor = '#ef4444'; winLabel = '🪨 ROCK WINS!'; }
+                else if (winnerSide === 'paper') { winColor = '#3b82f6'; winLabel = '📄 PAPER WINS!'; }
+                else if (winnerSide === 'scissors') { winColor = '#eab308'; winLabel = '✂️ SCISSORS WINS!'; }
+
+                ctx.save();
+                ctx.strokeStyle = '#fbbf24';
+                ctx.lineWidth = 6;
+                ctx.shadowColor = '#fbbf24';
+                ctx.shadowBlur = 25;
+                ctx.strokeRect(winBox.x, winBox.y, winBox.w, winBox.h);
+
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+                ctx.beginPath();
+                ctx.roundRect(W / 2 - 240, H / 2 - 70, 480, 140, 20);
+                ctx.fill();
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = winColor;
+                ctx.stroke();
+
+                ctx.font = '900 40px Inter, sans-serif';
+                ctx.fillStyle = '#ffffff';
+                ctx.textAlign = 'center';
+                ctx.shadowColor = winColor;
+                ctx.shadowBlur = 20;
+                ctx.fillText(winLabel, W / 2, H / 2 + 14);
+                ctx.restore();
+            }
+        }
+
+        function drawTurfScene() {
+            const tf = state.turf;
+            if (!tf) return;
+
+            const redPct = ((tf.redCells / tf.totalCells) * 100).toFixed(1);
+            const bluePct = ((tf.blueCells / tf.totalCells) * 100).toFixed(1);
+
+            ctx.save();
+            ctx.textAlign = 'center';
+            ctx.font = '900 28px Inter, sans-serif';
+            ctx.fillStyle = '#ff2a2a';
+            ctx.fillText(state.red.badge || 'RED TEAM', 180, 138);
+            ctx.fillStyle = '#3b82f6';
+            ctx.fillText(state.blue.badge || 'BLUE TEAM', W - 180, 138);
+
+            ctx.font = '900 44px Inter, sans-serif';
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText(`${redPct}%`, 180, 190);
+            ctx.fillText(`${bluePct}%`, W - 180, 190);
+            ctx.fillText('VS', W / 2, 182);
+
+            const barW = FULL_BOX.w;
+            const redBarW = (tf.redCells / tf.totalCells) * barW;
+            ctx.fillStyle = '#dc2626';
+            ctx.fillRect(FULL_BOX.x, 212, redBarW, 20);
+            ctx.fillStyle = '#2563eb';
+            ctx.fillRect(FULL_BOX.x + redBarW, 212, barW - redBarW, 20);
+            ctx.restore();
+
+            ctx.save();
+            for (let r = 0; r < tf.rows; r++) {
+                for (let c = 0; c < tf.cols; c++) {
+                    const team = tf.grid[r][c];
+                    ctx.fillStyle = team === 0 ? '#7f1d1d' : '#1e3a8a';
+                    ctx.fillRect(
+                        FULL_BOX.x + c * tf.cellW,
+                        FULL_BOX.y + r * tf.cellH,
+                        tf.cellW + 0.6,
+                        tf.cellH + 0.6
+                    );
+                }
+            }
+
+            for (let b of tf.balls) {
+                ctx.beginPath();
+                ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+                ctx.fillStyle = b.team === 0 ? '#ff2a2a' : '#60a5fa';
+                ctx.shadowColor = '#ffffff';
+                ctx.shadowBlur = 10;
+                ctx.fill();
+                ctx.lineWidth = 2.5;
+                ctx.strokeStyle = '#ffffff';
+                ctx.stroke();
+            }
+
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 4;
+            ctx.strokeRect(FULL_BOX.x, FULL_BOX.y, FULL_BOX.w, FULL_BOX.h);
+            ctx.restore();
+        }
+
+        function drawRpsScene() {
+            const rps = state.rps;
+            if (!rps) return;
+
+            ctx.save();
+            ctx.textAlign = 'center';
+            const headers = [
+                { emoji: '🪨 ROCK', count: rps.counts[0], color: '#ef4444', x: 140 },
+                { emoji: '📄 PAPER', count: rps.counts[1], color: '#3b82f6', x: W / 2 },
+                { emoji: '✂️ SCISSORS', count: rps.counts[2], color: '#eab308', x: W - 140 }
+            ];
+
+            for (let h of headers) {
+                ctx.font = '900 24px Inter, sans-serif';
+                ctx.fillStyle = h.color;
+                ctx.fillText(h.emoji, h.x, 145);
+                ctx.font = '900 44px Inter, sans-serif';
+                ctx.fillStyle = '#ffffff';
+                ctx.fillText(h.count, h.x, 198);
+            }
+
+            ctx.strokeStyle = '#a855f7';
+            ctx.lineWidth = 5;
+            ctx.shadowColor = '#9333ea';
+            ctx.shadowBlur = 18;
+            ctx.strokeRect(FULL_BOX.x, FULL_BOX.y, FULL_BOX.w, FULL_BOX.h);
+            ctx.restore();
+
+            ctx.save();
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            for (let it of rps.items) {
+                const tInfo = rps.types[it.type];
+                ctx.beginPath();
+                ctx.arc(it.x, it.y, it.r, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(17, 24, 39, 0.85)';
+                ctx.fill();
+                ctx.lineWidth = 2.5;
+                ctx.strokeStyle = tInfo.color;
+                ctx.stroke();
+
+                ctx.font = '22px sans-serif';
+                ctx.fillText(tInfo.emoji, it.x, it.y + 1);
+            }
+            ctx.restore();
+        }
+
+        function drawSideColumn(side) {
+            const box = side.box;
+            const centerX = box.x + box.w / 2;
+
+            ctx.save();
+            ctx.textAlign = 'center';
+
+            ctx.font = '900 32px Inter, sans-serif';
+            ctx.fillStyle = side.isRed ? '#ff2a2a' : '#2563eb';
+            ctx.shadowColor = side.glowColor;
+            ctx.shadowBlur = 18;
+            ctx.fillText(side.badge, centerX, 138);
+
+            ctx.font = '900 40px Inter, sans-serif';
+            ctx.fillStyle = '#ffffff';
+            ctx.shadowColor = 'rgba(255,255,255,0.35)';
+            ctx.shadowBlur = 10;
+            ctx.fillText(`${formatNumberDot(side.logicalBalls)} BALLS`, centerX, 186);
+
+            const totalItems = state.mode === 'floors' ? side.floors.length : side.rings.length;
+            const displayFloor = Math.min(totalItems, side.currentFloorIdx + 1);
+            ctx.font = '700 21px Inter, sans-serif';
+            ctx.fillStyle = '#d1d5db';
+            ctx.shadowBlur = 0;
+            if (state.mode === 'boss' && state.boss) {
+                const bObj = side.isRed ? state.boss.redBoss : state.boss.blueBoss;
+                ctx.fillText(`BOSS HP: ${formatNumberDot(bObj.hp)}`, centerX, 224);
+            } else if (state.mode === 'plinko' && state.plinko) {
+                const pObj = side.isRed ? state.plinko.red : state.plinko.blue;
+                ctx.fillText(`GOAL: ${formatNumberDot(side.logicalBalls)} / ${formatNumberDot(pObj.target)}`, centerX, 224);
+            } else {
+                ctx.fillText(`floor ${displayFloor} / ${totalItems}`, centerX, 224);
+            }
+            ctx.restore();
+
+            ctx.save();
+            ctx.strokeStyle = side.mainColor;
+            ctx.lineWidth = 4;
+            ctx.shadowColor = side.glowColor;
+            ctx.shadowBlur = 14;
+            ctx.strokeRect(box.x, box.y, box.w, box.h);
+            ctx.restore();
+
+            if (state.mode === 'floors') {
+                const firstActive = side.floors.find(f => !f.broken);
+                for (let f of side.floors) {
+                    if (f.broken) continue;
+                    const isCurrent = (firstActive && firstActive.index === f.index);
+                    const barH = 22;
+                    const barY = f.y - barH / 2;
+
+                    ctx.save();
+                    if (f.hitFlash > 0.2) {
+                        ctx.fillStyle = side.isRed ? '#ff6b6b' : '#bfdbfe';
+                    } else if (isCurrent) {
+                        ctx.fillStyle = side.activeBarFill;
+                    } else {
+                        ctx.fillStyle = side.isRed ? '#881313' : '#172554';
+                    }
+
+                    ctx.fillRect(box.x + 2, barY, box.w - 4, barH);
+
+                    if (isCurrent) {
+                        ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+                        ctx.lineWidth = 2;
+                        for (let ax = box.x + 35; ax < box.x + box.w - 30; ax += 75) {
+                            ctx.beginPath();
+                            ctx.moveTo(ax, barY + 4);
+                            ctx.lineTo(ax + 8, barY + barH / 2);
+                            ctx.lineTo(ax, barY + barH - 4);
+                            ctx.stroke();
+                        }
+                    }
+
+                    ctx.font = '800 17px Inter, sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillStyle = '#ffffff';
+                    ctx.shadowColor = 'rgba(0,0,0,0.9)';
+                    ctx.shadowBlur = 4;
+                    ctx.fillText(formatNumberDot(Math.ceil(f.hp)), centerX, f.y + 0.5);
+                    ctx.restore();
+                }
+            } else if (state.mode === 'rings') {
+                const cx = box.x + box.w / 2;
+                const cy = box.y + box.h * 0.36;
+                for (let rg of side.rings) {
+                    if (rg.broken) continue;
+                    ctx.save();
+                    ctx.strokeStyle = rg.color;
+                    ctx.lineWidth = 7;
+                    ctx.lineCap = 'round';
+                    ctx.shadowColor = rg.color;
+                    ctx.shadowBlur = 10;
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, rg.radius, rg.angle + rg.gapSize / 2, rg.angle + Math.PI * 2 - rg.gapSize / 2);
+                    ctx.stroke();
+                    ctx.restore();
+                }
+            } else if (state.mode === 'boss' && state.boss) {
+                const boss = side.isRed ? state.boss.redBoss : state.boss.blueBoss;
+                if (boss && boss.hp > 0) {
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.arc(boss.x, boss.y, boss.r, 0, Math.PI * 2);
+                    ctx.fillStyle = boss.hitFlash > 0.2 ? '#ffffff' : (side.isRed ? '#7f1d1d' : '#1e3a8a');
+                    ctx.shadowColor = side.isRed ? '#ef4444' : '#3b82f6';
+                    ctx.shadowBlur = 22;
+                    ctx.fill();
+                    ctx.lineWidth = 5;
+                    ctx.strokeStyle = '#fbbf24';
+                    ctx.stroke();
+
+                    ctx.textAlign = 'center';
+                    ctx.font = '34px sans-serif';
+                    ctx.fillText('👾', boss.x, boss.y - 14);
+                    ctx.font = '900 22px Inter, sans-serif';
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillText(formatNumberDot(Math.ceil(boss.hp)), boss.x, boss.y + 24);
+                    ctx.restore();
+                }
+            } else if (state.mode === 'plinko' && state.plinko) {
+                const pData = side.isRed ? state.plinko.red : state.plinko.blue;
+                if (pData) {
+                    for (let pg of pData.pegs) {
+                        ctx.beginPath();
+                        ctx.arc(pg.x, pg.y, pg.r, 0, Math.PI * 2);
+                        ctx.fillStyle = pg.flash > 0.1 ? '#fbbf24' : '#e5e7eb';
+                        ctx.fill();
+                    }
+                    for (let g of pData.gates) {
+                        ctx.save();
+                        ctx.fillStyle = g.color;
+                        ctx.shadowColor = g.color;
+                        ctx.shadowBlur = 12;
+                        ctx.fillRect(g.x, g.y, g.w, g.h);
+                        ctx.font = '900 18px Inter, sans-serif';
+                        ctx.fillStyle = '#030305';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(g.label, g.x + g.w / 2, g.y + g.h / 2 + 1);
+                        ctx.restore();
+                    }
+                    ctx.fillStyle = side.isRed ? '#dc2626' : '#2563eb';
+                    ctx.fillRect(box.x + 2, box.y + box.h - 26, box.w - 4, 24);
+                    ctx.font = '900 14px Inter, sans-serif';
+                    ctx.fillStyle = '#ffffff';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('GOAL ZONE (+SCORE)', centerX, box.y + box.h - 10);
+                }
+            }
+
+            ctx.save();
+            const r = side.radius;
+            for (let i = 0; i < side.balls.length; i++) {
+                const b = side.balls[i];
+
+                if (b.trail && b.trail.length > 1) {
+                    for (let t = 0; t < b.trail.length; t++) {
+                        const pt = b.trail[t];
+                        ctx.beginPath();
+                        ctx.arc(pt.x, pt.y, r * (t / b.trail.length) * 0.85, 0, Math.PI * 2);
+                        ctx.fillStyle = side.isRed ? `rgba(255, 40, 40, ${t * 0.06})` : `rgba(59, 130, 246, ${t * 0.06})`;
+                        ctx.fill();
+                    }
+                }
+
+                ctx.beginPath();
+                ctx.arc(b.x, b.y, r, 0, Math.PI * 2);
+                ctx.fillStyle = side.isRed ? '#ff2424' : '#1d4ed8';
+                ctx.fill();
+
+                ctx.beginPath();
+                ctx.arc(b.x - r * 0.28, b.y - r * 0.28, Math.max(1.2, r * 0.36), 0, Math.PI * 2);
+                ctx.fillStyle = side.isRed ? '#fca5a5' : '#93c5fd';
+                ctx.fill();
+            }
+            ctx.restore();
+        }
+
+        // ==========================================
+        // 5. ASOSIY ANIMATSIYA SIKLI (60 FPS)
+        // ==========================================
+        function animateLoop() {
+            updatePhysics();
+            drawScene();
+            requestAnimationFrame(animateLoop);
+        }
+
+        // ==========================================
+        // 6. VIDEOGA YOZIB OLISH (MEDIARECORDER API)
+        // ==========================================
+        function getSupportedMimeType() {
+            const types = [
+                'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
+                'video/mp4',
+                'video/webm;codecs=vp9,opus',
+                'video/webm;codecs=vp8,opus',
+                'video/webm'
+            ];
+            for (let t of types) {
+                if (window.MediaRecorder && MediaRecorder.isTypeSupported(t)) {
+                    return t;
+                }
+            }
+            return '';
+        }
+
+        function startRecordingAndGame() {
+            ensureAudio();
+            initGame();
+            gameRunning = true;
+
+            document.getElementById('downloadPanel').classList.add('hidden');
+            document.getElementById('downloadPanel').classList.remove('flex');
+
+            try {
+                const canvasStream = canvas.captureStream(60);
+                const combinedTracks = [...canvasStream.getVideoTracks()];
+                if (audioDest && audioDest.stream.getAudioTracks().length > 0) {
+                    combinedTracks.push(...audioDest.stream.getAudioTracks());
+                }
+                const finalStream = new MediaStream(combinedTracks);
+
+                const mimeType = getSupportedMimeType();
+                const options = mimeType ? { mimeType, videoBitsPerSecond: 8000000 } : { videoBitsPerSecond: 8000000 };
+
+                mediaRecorder = new MediaRecorder(finalStream, options);
+                recordedChunks = [];
+
+                mediaRecorder.ondataavailable = (e) => {
+                    if (e.data && e.data.size > 0) {
+                        recordedChunks.push(e.data);
+                    }
+                };
+
+                mediaRecorder.onstop = () => {
+                    const finalMime = mediaRecorder.mimeType || 'video/webm';
+                    const blob = new Blob(recordedChunks, { type: finalMime });
+                    const url = URL.createObjectURL(blob);
+                    const ext = finalMime.includes('mp4') ? 'mp4' : 'webm';
+
+                    const dlLink = document.getElementById('downloadLink');
+                    dlLink.href = url;
+                    dlLink.download = `reels_vs_game_${Date.now()}.${ext}`;
+                    document.getElementById('videoFormatLabel').textContent = `${ext.toUpperCase()} • ${(blob.size / (1024 * 1024)).toFixed(1)} MB`;
+
+                    const dlPanel = document.getElementById('downloadPanel');
+                    dlPanel.classList.remove('hidden');
+                    dlPanel.classList.add('flex');
+                };
+
+                mediaRecorder.start(200);
+                isRecording = true;
+                updateRecordingUI(true);
+            } catch (err) {
+                gameRunning = true;
+            }
+        }
+
+        function stopRecordingAndGame() {
+            gameRunning = false;
+            if (autoStopTimeout) {
+                clearTimeout(autoStopTimeout);
+                autoStopTimeout = null;
+            }
+            if (isRecording && mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+            }
+            isRecording = false;
+            updateRecordingUI(false);
+        }
+
+        function updateRecordingUI(recording) {
+            const btnRec = document.getElementById('btnStartRecord');
+            const badge = document.getElementById('recBadge');
+
+            if (recording) {
+                btnRec.innerHTML = `<span class="w-3 h-3 bg-white rounded-sm"></span><span>Yozishni To'xtatish va Videoni Olish</span>`;
+                btnRec.className = "w-full py-3.5 px-4 rounded-xl font-black text-sm sm:text-base uppercase tracking-wide bg-amber-600 hover:bg-amber-500 text-white shadow-lg flex items-center justify-center gap-2 transition";
+                badge.classList.remove('hidden');
+                badge.classList.add('inline-flex');
+
+                recStartTime = Date.now();
+                clearInterval(recTimerInterval);
+                recTimerInterval = setInterval(() => {
+                    const sec = Math.floor((Date.now() - recStartTime) / 1000);
+                    const m = String(Math.floor(sec / 60)).padStart(2, '0');
+                    const s = String(sec % 60).padStart(2, '0');
+                    document.getElementById('recTimer').textContent = `${m}:${s}`;
+                }, 500);
+            } else {
+                btnRec.innerHTML = `<span class="w-3 h-3 rounded-full bg-white"></span><span>Boshlash va Videoga Yozish</span>`;
+                btnRec.className = "w-full py-3.5 px-4 rounded-xl font-black text-sm sm:text-base uppercase tracking-wide bg-gradient-to-r from-red-600 via-rose-600 to-pink-600 hover:from-red-500 hover:to-pink-500 text-white shadow-lg shadow-red-900/40 flex items-center justify-center gap-2 transition active:scale-[0.99]";
+                badge.classList.add('hidden');
+                badge.classList.remove('inline-flex');
+                clearInterval(recTimerInterval);
+            }
+        }
+
+        // ==========================================
+        // 7. TEZKOR SSENARIYLAR VA EVENT LISTENERLAR
+        // ==========================================
+        window.applyPreset = function(presetName) {
+            if (presetName === 'screenshot') {
+                document.getElementById('selGameMode').value = 'floors';
+                document.getElementById('inpHookText').value = '';
+                document.getElementById('redBadge').value = 'X100';
+                document.getElementById('redCount').value = '1';
+                document.getElementById('redPower').value = '25';
+                document.getElementById('redRadius').value = '11';
+                document.getElementById('redFloorRule').value = 'double';
+
+                document.getElementById('blueBadge').value = '+300';
+                document.getElementById('blueCount').value = '1500';
+                document.getElementById('bluePower').value = '1';
+                document.getElementById('blueRadius').value = '5';
+                document.getElementById('blueFloorRule').value = 'plus300';
+
+                document.getElementById('inpFloorsHP').value = '100, 500, 1000, 1500, 2000, 3000, 4000, 5000, 6000, 7000';
+            } else if (presetName === 'turfWar') {
+                document.getElementById('selGameMode').value = 'turf';
+                document.getElementById('inpHookText').value = 'Qaysi rang hududni egallaydi? 👇';
+                document.getElementById('redBadge').value = '3 GIANT BALLS';
+                document.getElementById('redCount').value = '3';
+                document.getElementById('redRadius').value = '18';
+
+                document.getElementById('blueBadge').value = '18 SMALL BALLS';
+                document.getElementById('blueCount').value = '18';
+                document.getElementById('blueRadius').value = '8';
+            } else if (presetName === 'rpsRoyale') {
+                document.getElementById('selGameMode').value = 'rps';
+                document.getElementById('inpHookText').value = 'Kim oxirgi bo\'lib qoladi? 🪨📄✂️';
+                document.getElementById('redCount').value = '24';
+            } else if (presetName === 'bossRaid') {
+                document.getElementById('selGameMode').value = 'boss';
+                document.getElementById('inpHookText').value = 'Kim Bossni birinchi yiqitadi? 👾';
+                document.getElementById('redBadge').value = '1 MEGA SNIPER';
+                document.getElementById('redCount').value = '1';
+                document.getElementById('redPower').value = '120';
+                document.getElementById('redRadius').value = '14';
+                document.getElementById('redFloorRule').value = 'double';
+
+                document.getElementById('blueBadge').value = '500 MINI ARMY';
+                document.getElementById('blueCount').value = '500';
+                document.getElementById('bluePower').value = '2';
+                document.getElementById('blueRadius').value = '5';
+                document.getElementById('blueFloorRule').value = 'plus50';
+            } else if (presetName === 'plinkoRace') {
+                document.getElementById('selGameMode').value = 'plinko';
+                document.getElementById('inpHookText').value = '10.000 ga kim birinchi yetadi? 🎰';
+                document.getElementById('redBadge').value = 'POWER X15';
+                document.getElementById('redCount').value = '5';
+                document.getElementById('redPower').value = '15';
+                document.getElementById('redRadius').value = '9';
+
+                document.getElementById('blueBadge').value = 'FAST SWARM';
+                document.getElementById('blueCount').value = '40';
+                document.getElementById('bluePower').value = '6';
+                document.getElementById('blueRadius').value = '6';
+            } else if (presetName === 'ringEscape') {
+                document.getElementById('selGameMode').value = 'rings';
+                document.getElementById('inpHookText').value = 'Qafasdan kim birinchi qochadi? ⭕';
+                document.getElementById('redBadge').value = '1 BIG BALL';
+                document.getElementById('redCount').value = '1';
+                document.getElementById('redRadius').value = '12';
+                document.getElementById('redFloorRule').value = 'double';
+
+                document.getElementById('blueBadge').value = '40 FAST BALLS';
+                document.getElementById('blueCount').value = '40';
+                document.getElementById('blueRadius').value = '6';
+                document.getElementById('blueFloorRule').value = 'none';
+            }
+            stopRecordingAndGame();
+            initGame();
+        };
+
+        document.getElementById('btnStartRecord').addEventListener('click', () => {
+            if (isRecording) {
+                stopRecordingAndGame();
+            } else {
+                startRecordingAndGame();
+            }
+        });
+
+        document.getElementById('btnStartOnly').addEventListener('click', () => {
+            ensureAudio();
+            if (!gameRunning) {
+                initGame();
+                gameRunning = true;
+            }
+        });
+
+        document.getElementById('btnStopReset').addEventListener('click', () => {
+            stopRecordingAndGame();
+            initGame();
+        });
+
+        document.getElementById('btnMute').addEventListener('click', (e) => {
+            soundEnabled = !soundEnabled;
+            e.target.textContent = soundEnabled ? '🔊 Ovoz: Yoqilgan' : '🔇 Ovoz: O\'chirilgan';
+        });
+
+        document.getElementById('rngSpeed').addEventListener('input', (e) => {
+            state.speed = parseFloat(e.target.value) || 1.2;
+            document.getElementById('lblSpeed').textContent = state.speed.toFixed(1) + 'x';
+        });
+
+        const liveInputIds = [
+            'selGameMode', 'inpHookText', 'redBadge', 'redCount', 'redPower', 'redRadius', 'redFloorRule',
+            'blueBadge', 'blueCount', 'bluePower', 'blueRadius', 'blueFloorRule', 'inpFloorsHP'
+        ];
+        liveInputIds.forEach(id => {
+            document.getElementById(id).addEventListener('change', () => {
+                if (!isRecording) {
+                    gameRunning = false;
+                    initGame();
+                }
+            });
+        });
+
+        window.onload = function () {
+            initGame();
+            animateLoop();
+        };
+    </script>
+</body>
+</html>
