@@ -106,13 +106,29 @@
             }
 
             row.appendChild(control);
-            if (s.hint) row.appendChild(el('div', 'field-hint', esc(s.hint)));
+            let hintEl = null;
+            if (s.hint) {
+                const hintText = typeof s.hint === 'function' ? s.hint(values) : s.hint;
+                hintEl = el('div', 'field-hint', esc(hintText));
+                row.appendChild(hintEl);
+            }
             root.appendChild(row);
-            rows.push({ s, row });
+            rows.push({ s, row, hintEl });
         }
 
         function refresh() {
-            for (const { s, row } of rows) row.hidden = s.visible ? !s.visible(values) : false;
+            for (const { s, row, hintEl } of rows) {
+                if (s.visible) row.hidden = !s.visible(values);
+                if (s.active) {
+                    const isActive = !!s.active(values);
+                    row.classList.toggle('is-disabled', !isActive);
+                    const inps = row.querySelectorAll('input, select, textarea, button');
+                    inps.forEach(i => { i.disabled = !isActive; });
+                }
+                if (hintEl && typeof s.hint === 'function') {
+                    hintEl.textContent = s.hint(values);
+                }
+            }
         }
         refresh();
     }

@@ -11,8 +11,8 @@
     };
 
     const SETTINGS = [
-        { group: 'Ishtirokchilar', key: 'players', label: 'O\'yinchilar', type: 'range', min: 3, max: 24, step: 1, default: 10 },
-        { key: 'useRoster', label: 'Obunachi nikidan foydalanish', type: 'toggle', default: true },
+        { group: 'Ishtirokchilar', key: 'fillBots', label: 'Bot bilan to\'ldirish', type: 'toggle', default: false, hint: () => App.roster.realOnly ? 'Obunachilar bo\'limida "Real obunachilar" yoqilgan (botlar o\'chiq)' : 'Obunachi yetmasa, botlar bilan to\'ldiriladi', active: () => !App.roster.realOnly },
+        { key: 'players', label: 'Eng ko\'pi bilan', type: 'range', min: 2, max: 24, step: 1, default: 10, active: (v) => !App.roster.realOnly && !!v.fillBots },
         { key: 'drops', label: 'Har biriga sharlar', type: 'range', min: 1, max: 5, step: 1, default: 3 },
         { group: 'Taxta', key: 'risk', label: 'Xavf darajasi', type: 'segment', default: 'mid', options: [['low', 'Past'], ['mid', 'O\'rta'], ['high', 'Yuqori']], hint: 'Yuqori = chetlarda katta ball, o\'rtada 0' },
         { key: 'bounce', label: 'Sakrovchanlik', type: 'range', min: 0.3, max: 0.8, step: 0.05, default: 0.5 },
@@ -20,7 +20,8 @@
 
     function create(env) {
         const { ctx, W, arena: A, cfg, fx, audio, rnd } = env;
-        const people = env.participants(cfg.players);
+        const people = env.participants(cfg.players, { min: 1, max: 24 });
+        if (people.length < 1) return env.emptyScreen('Plinko', 1);
         const vals = TABLES[cfg.risk];
         const L = A.x + 24, Rr = A.x + A.w - 24, BW = (Rr - L) / vals.length;
         const bucketY = A.y + A.h - 96;

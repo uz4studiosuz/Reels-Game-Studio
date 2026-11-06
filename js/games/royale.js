@@ -5,8 +5,8 @@
     const { text, rr, fit, token, frame, clip, PAL, FONT } = App.draw;
 
     const SETTINGS = [
-        { group: 'Ishtirokchilar', key: 'players', label: 'O\'yinchilar', type: 'range', min: 4, max: 24, step: 1, default: 12 },
-        { key: 'useRoster', label: 'Obunachi nikidan foydalanish', type: 'toggle', default: true },
+        { group: 'Ishtirokchilar', key: 'fillBots', label: 'Bot bilan to\'ldirish', type: 'toggle', default: false, hint: () => App.roster.realOnly ? 'Obunachilar bo\'limida "Real obunachilar" yoqilgan (botlar o\'chiq)' : 'Obunachi yetmasa, botlar bilan to\'ldiriladi', active: () => !App.roster.realOnly },
+        { key: 'players', label: 'Eng ko\'pi bilan', type: 'range', min: 2, max: 24, step: 1, default: 12, active: (v) => !App.roster.realOnly && !!v.fillBots },
         { key: 'names', label: 'Ismlar ko\'rinsin', type: 'toggle', default: true },
         { group: 'Jang', key: 'hp', label: 'Boshlang\'ich jon', type: 'range', min: 60, max: 300, step: 10, default: 120 },
         { key: 'power', label: 'Zarba kuchi', type: 'range', min: 0.5, max: 2.5, step: 0.1, default: 1, unit: '×' },
@@ -16,8 +16,9 @@
 
     function create(env) {
         const { ctx, W, arena: A, cfg, fx, audio, rnd } = env;
-        const people = env.participants(cfg.players);
-        const R = cfg.players > 16 ? 21 : 26;
+        const people = env.participants(cfg.players, { min: 2, max: 24 });
+        if (people.length < 2) return env.emptyScreen('Oxirgi tirik', 2);
+        const R = people.length > 16 ? 21 : 26;
         const B = [];
         people.forEach((p, i) => {
             let x, y, k = 0;

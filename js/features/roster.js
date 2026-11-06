@@ -7,6 +7,7 @@
     const { shuffle } = App.util;
 
     const KEY = 'rl.roster.v1';
+    const REAL_KEY = 'rl.roster.realOnly';
     const MAX_LEN = 14;
     const FALLBACK = ['🐶', '🐱', '🦊', '🐼', '🐸', '🦁', '🐵', '🐯', '🐷', '🐰', '🐨', '🐮', '🐔', '🐧', '🦄', '🐙', '🐢', '🦉', '🐳', '🦋', '🐝', '🦀', '🐞', '🦖'];
 
@@ -22,17 +23,26 @@
 
     const Roster = {
         names: [],
+        realOnly: false,
         CLASSES, CLASS_LIST,
         _subs: [],
 
         load() {
             try { this.names = JSON.parse(localStorage.getItem(KEY) || '[]').filter(Boolean); } catch (e) { this.names = []; }
+            try { this.realOnly = JSON.parse(localStorage.getItem(REAL_KEY) || 'false'); } catch (e) { this.realOnly = false; }
         },
         save() {
-            try { localStorage.setItem(KEY, JSON.stringify(this.names)); } catch (e) { /* xotira yopiq bo'lishi mumkin */ }
+            try {
+                localStorage.setItem(KEY, JSON.stringify(this.names));
+                localStorage.setItem(REAL_KEY, JSON.stringify(this.realOnly));
+            } catch (e) { /* xotira yopiq bo'lishi mumkin */ }
         },
         onChange(fn) { this._subs.push(fn); },
-        _emit() { this.save(); this._subs.forEach(fn => fn(this.names)); },
+        _emit() { this.save(); this._subs.forEach(fn => fn(this.names, this.realOnly)); },
+        setRealOnly(val) {
+            this.realOnly = !!val;
+            this._emit();
+        },
 
         /** "nik" yoki "nik:tur" yozuvini {name, cls} ga ajratadi. */
         split(entry) {
@@ -75,20 +85,39 @@
 
         /**
          * O'yin uchun n ta ishtirokchi tayyorlaydi.
-         * Obunachi nikidan foydalanilsa va yetmasa — qolganlari emoji bilan to'ldiriladi.
+         * "Real obunachilar" yoqilgan bo'lsa — faqat va faqat ro'yxatdagi obunachilar qatnashadi (botlar bo'lmaydi).
+         * "Bot bilan to'ldirish" yoqilgan bo'lsa — yetmagan o'rinlar botlar bilan to'ldiriladi.
          * @returns {{name:string,label:string,emoji:boolean,nick:boolean,hue:number,cls:string|null}[]}
          */
-        participants(n, useRoster, rand) {
+        participants(n, useRoster, rand, opts = {}) {
             const r = rand || Math.random;
+            const isRealOnly = opts.realOnly !== undefined ? !!opts.realOnly : !!this.realOnly;
+            const shouldFillBots = !isRealOnly && (opts.fillBots !== undefined ? !!opts.fillBots : false);
+
             const out = [];
-            const pool = useRoster ? shuffle(this.names.slice(), r).slice(0, n) : [];
-            for (const entry of pool) {
-                const { name, cls } = this.split(entry);
-                const prof = this.profile(name);
-                out.push({ name, label: name.slice(0, 2).toUpperCase(), emoji: false, nick: true, cls, team: prof.team });
+            if (useRoster && this.names.length) {
+                const limit = opts.max ? Math.min(opts.max, n) : n;
+                const pool = shuffle(this.names.slice(), r).slice(0, limit);
+                for (const entry of pool) {
+                    const { name, cls } = this.split(entry);
+                    const prof = this.profile(name);
+                    out.push({ name, label: name.slice(0, 2).toUpperCase(), emoji: false, nick: true, cls, team: prof.team });
+                }
             }
-            const fill = shuffle(FALLBACK.slice(), r);
-            for (let i = 0; out.length < n; i++) out.push({ name: fill[i % fill.length], label: fill[i % fill.length], emoji: true, nick: false, cls: null });
+            if (shouldFillBots && out.length < n) {
+                const fill = shuffle(FALLBACK.slice(), r);
+                const need = n - out.length;
+                for (let i = 0; i < need; i++) {
+                    const em = fill[i % fill.length];
+                    out.push({ name: em, label: em, emoji: true, nick: false, cls: null, team: null });
+                }
+            } else if (!useRoster && shouldFillBots && out.length === 0) {
+                const fill = shuffle(FALLBACK.slice(), r);
+                for (let i = 0; i < n; i++) {
+                    const em = fill[i % fill.length];
+                    out.push({ name: em, label: em, emoji: true, nick: false, cls: null, team: null });
+                }
+            }
             shuffle(out, r);
             out.forEach((p, i) => { p.hue = Math.round((i * 137.508 + 14) % 360); p.index = i; });
             return out;

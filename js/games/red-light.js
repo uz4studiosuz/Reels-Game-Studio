@@ -5,22 +5,24 @@
     const { text, fit, token, frame, PAL } = App.draw;
 
     const SETTINGS = [
-        { group: 'Ishtirokchilar', key: 'players', label: 'O\'yinchilar', type: 'range', min: 4, max: 16, step: 1, default: 10 },
-        { key: 'useRoster', label: 'Obunachi nikidan foydalanish', type: 'toggle', default: true },
+        { group: 'Ishtirokchilar', key: 'fillBots', label: 'Bot bilan to\'ldirish', type: 'toggle', default: false, hint: () => App.roster.realOnly ? 'Obunachilar bo\'limida "Real obunachilar" yoqilgan (botlar o\'chiq)' : 'Obunachi yetmasa, botlar bilan to\'ldiriladi', active: () => !App.roster.realOnly },
+        { key: 'players', label: 'Eng ko\'pi bilan', type: 'range', min: 2, max: 16, step: 1, default: 10, active: (v) => !App.roster.realOnly && !!v.fillBots },
         { group: 'Qoida', key: 'risk', label: 'Xavf', type: 'segment', default: 'normal', options: [['low', 'Past'], ['normal', 'O\'rta'], ['high', 'Yuqori']], hint: 'Yuqori = ko\'proq odam qizilda qimirlab qoladi' },
         { key: 'mercy', label: 'Kamida bittasi qoladi', type: 'toggle', default: true },
     ];
 
     function create(env) {
         const { ctx, W, arena: A, cfg, fx, audio, rnd } = env;
-        const n = cfg.players;
+        const people = env.participants(cfg.players, { min: 1, max: 16 });
+        if (people.length < 1) return env.emptyScreen('Qizil chiroq', 1);
+        const n = people.length;
         const laneW = A.w / n, r = clamp(laneW * 0.38, 12, 24);
         const top = A.y + 120, bot = A.y + A.h - 50, DIST = bot - top;
         const grace = { low: 34, normal: 26, high: 18 }[cfg.risk];
         // tezlik: eng tez yuguruvchi tanlangan davomiylikning ~85% ida yetib kelsin
         const T = env.targetSec * 60 * 1.3, greenShare = 0.6;
         const baseV = DIST / (T * greenShare);
-        const R = env.participants(n).map((p, i) => ({
+        const R = people.map((p, i) => ({
             p, i, x: A.x + laneW * (i + 0.5), y: bot, v: baseV * rnd(0.82, 1.18),
             react: 0, reactMax: 4 + Math.pow(rnd(0, 1), 2) * 30, moving: false, alive: true, dead: 0, done: false, step: 0,
         }));

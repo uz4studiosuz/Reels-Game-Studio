@@ -82,14 +82,61 @@
                 get tick() { return self.tick; },
                 sched() { return Math.min(1.1, self.tick / (env.targetSec * 60)); },
                 rand, rnd: (a, b) => a + rand() * (b - a),
-                participants: (n) => App.roster.participants(n, cfg.useRoster !== false && !!def.roster, rand),
+                emptyScreen: (title, minNeeded = 2) => ({
+                    update() {},
+                    draw() {
+                        const { text, PAL } = App.draw;
+                        text(self.ctx, (title || def.name || 'O\'YIN').toUpperCase(), W / 2, 380, { size: 22, weight: 800, color: PAL.mute });
+                        text(self.ctx, 'Obunachilar kerak', W / 2, 470, { size: 52, weight: 300 });
+                        const lines = [
+                            'Bu rejimda faqat real obunachilar qatnashadi.',
+                            `Kamida ${minNeeded} ta nik qo'shing:`,
+                            '1. Obunachilar tabiga o\'ting',
+                            '2. Niklarni ro\'yxatga joylang',
+                            '— yoki —',
+                            'O\'yin tabida "Bot bilan to\'ldirish"ni yoqing',
+                        ];
+                        lines.forEach((s, i) => {
+                            const isAction = i === 2 || i === 3 || i === 5;
+                            text(self.ctx, s, W / 2, 570 + i * 44, {
+                                size: isAction ? 24 : 22,
+                                weight: isAction ? 700 : 500,
+                                color: i === 5 ? PAL.accent : PAL.ink,
+                                alpha: s ? 0.9 : 0
+                            });
+                        });
+                    }
+                }),
+                participants: (n, opts = {}) => {
+                    const minNeeded = typeof opts === 'number' ? opts : (opts.min || 2);
+                    const maxCap = opts.max || (typeof n === 'number' ? n : 40);
+                    const isRealOnly = !!App.roster.realOnly;
+                    const shouldFillBots = !isRealOnly && !!cfg.fillBots;
+
+                    let target = typeof n === 'number' ? n : maxCap;
+                    if (!shouldFillBots) {
+                        const rosterLen = App.roster.names.length;
+                        target = Math.min(rosterLen, maxCap);
+                    }
+
+                    return App.roster.participants(target, cfg.useRoster !== false && !!def.roster, rand, {
+                        fillBots: shouldFillBots,
+                        realOnly: isRealOnly,
+                        max: maxCap,
+                    });
+                },
                 finish: (r) => self._finish(r),
                 // natija chiqqach o'yin gapirmaydi: g'olibni va yakuniy chaqiriqni Session o'zi aytadi
                 say: (t, o) => self._say(t, o),
                 get quality() { return self.scale; },
             };
             this.env = env;
-            this.inst = def.create(env);
+            try {
+                this.inst = def.create(env);
+            } catch (err) {
+                console.error('def.create error:', err);
+                this.inst = env.emptyScreen(def.name, 2);
+            }
             this._acc = 0;
             this._last = 0;
             if (!this._raf) this._raf = requestAnimationFrame(this._loop);

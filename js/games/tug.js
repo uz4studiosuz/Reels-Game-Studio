@@ -7,8 +7,8 @@
     const TEAM = ['#ff5a36', '#4f8cff'];
 
     const SETTINGS = [
-        { group: 'Ishtirokchilar', key: 'players', label: 'O\'yinchilar', type: 'range', min: 4, max: 40, step: 2, default: 16, hint: 'Yarmi qizil, yarmi ko\'k jamoada' },
-        { key: 'useRoster', label: 'Obunachi nikidan foydalanish', type: 'toggle', default: true },
+        { group: 'Ishtirokchilar', key: 'fillBots', label: 'Bot bilan to\'ldirish', type: 'toggle', default: false, hint: () => App.roster.realOnly ? 'Obunachilar bo\'limida "Real obunachilar" yoqilgan (botlar o\'chiq)' : 'Obunachi yetmasa, botlar bilan to\'ldiriladi', active: () => !App.roster.realOnly },
+        { key: 'players', label: 'Eng ko\'pi bilan', type: 'range', min: 2, max: 40, step: 2, default: 16, hint: 'Yarmi qizil, yarmi ko\'k jamoada', active: (v) => !App.roster.realOnly && !!v.fillBots },
         { key: 'remember', label: 'Saqlangan jamoani ishlatish', type: 'toggle', default: true, hint: 'Obunachi Armiya jangidagi jamoasida chiqadi' },
         { group: 'Jamoalar', key: 'aName', label: 'Chap jamoa', type: 'text', default: 'QIZILLAR' },
         { key: 'bName', label: 'O\'ng jamoa', type: 'text', default: 'KO\'KLAR' },
@@ -18,7 +18,8 @@
 
     function create(env) {
         const { ctx, W, arena: A, cfg, fx, audio, rnd } = env;
-        const people = env.participants(cfg.players);
+        const people = env.participants(cfg.players, { min: 2, max: 40 });
+        if (people.length < 2) return env.emptyScreen('Arqon tortish', 2);
         // jamoalar: saqlangan jamoa saqlanadi, qolganlar kichik jamoaga
         const cnt = [0, 0];
         const M = people.map(p => ({ p, team: -1, str: rnd(0.7, 1.3), ph: rnd(0, TAU), f: rnd(1.2, 2.4), surge: 0, total: 0 }));

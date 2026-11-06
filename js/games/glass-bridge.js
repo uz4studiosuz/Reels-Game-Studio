@@ -5,8 +5,8 @@
     const { text, rr, fit, token, frame, clip, PAL } = App.draw;
 
     const SETTINGS = [
-        { group: 'Ishtirokchilar', key: 'players', label: 'O\'yinchilar', type: 'range', min: 4, max: 14, step: 1, default: 10 },
-        { key: 'useRoster', label: 'Obunachi nikidan foydalanish', type: 'toggle', default: true },
+        { group: 'Ishtirokchilar', key: 'fillBots', label: 'Bot bilan to\'ldirish', type: 'toggle', default: false, hint: () => App.roster.realOnly ? 'Obunachilar bo\'limida "Real obunachilar" yoqilgan (botlar o\'chiq)' : 'Obunachi yetmasa, botlar bilan to\'ldiriladi', active: () => !App.roster.realOnly },
+        { key: 'players', label: 'Eng ko\'pi bilan', type: 'range', min: 2, max: 14, step: 1, default: 10, active: (v) => !App.roster.realOnly && !!v.fillBots },
         { group: 'Ko\'prik', key: 'rows', label: 'Qatorlar (0 = avto)', type: 'range', min: 0, max: 10, step: 1, default: 0 },
         { key: 'tension', label: 'Hayajon (o\'ylanish)', type: 'segment', default: 'normal', options: [['fast', 'Tez'], ['normal', 'O\'rta'], ['slow', 'Sekin']], hint: 'Sekin = ko\'proq kutish, ko\'proq tarang' },
         { key: 'mercy', label: 'Oxirgilarga omad', type: 'toggle', default: true, hint: 'Hamma yiqilib ketmasligi uchun' },
@@ -14,7 +14,8 @@
 
     function create(env) {
         const { ctx, W, arena: A, cfg, fx, audio, rnd, rand } = env;
-        const people = env.participants(cfg.players);
+        const people = env.participants(cfg.players, { min: 1, max: 14 });
+        if (people.length < 1) return env.emptyScreen('Shisha ko\'prik', 1);
         const n = people.length;
         const rows = cfg.rows > 0 ? cfg.rows : clamp(n - 2, 3, 9);
         const GAP = 124, DX = 112, TW = 192, TH = 92, CX = A.x + A.w / 2;

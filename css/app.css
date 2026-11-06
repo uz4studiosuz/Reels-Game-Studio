@@ -115,6 +115,8 @@ button { font: inherit; color: inherit; cursor: pointer; background: none; borde
 /* ---------- forma ---------- */
 .group { font-family: var(--mono); font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--accent); margin: 28px 0 4px; }
 .field { padding: 14px 0; border-bottom: 1px solid var(--rule); }
+.field.is-disabled { opacity: 0.38; pointer-events: none; user-select: none; }
+.field.is-disabled input[type=range] { cursor: not-allowed; }
 .field-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
 .field-label { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink); }
 .field-out { font-family: var(--mono); font-size: 12px; color: var(--mute); }

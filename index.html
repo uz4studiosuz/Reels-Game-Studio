@@ -72,9 +72,20 @@
                     <ol class="steps">
                         <li>Videoda: "Nikingizni kommentga yozing — o'yinda qatnashasiz".</li>
                         <li>Kommentlardagi nik-larni nusxalab, shu yerga joylang (har qatorga bitta yoki vergul bilan).</li>
-                        <li>"nik" belgisi bor o'yinlar ularni avtomatik ishtirokchi qiladi, yetmasa emoji/bot to'ldiradi.</li>
+                        <li>"nik" belgisi bor o'yinlar ularni avtomatik ishtirokchi qiladi. "Real obunachilar" yoqilsa faqat ular qatnashadi.</li>
                         <li>Armiya jangida jangchi turini tanlash uchun: <b>nik ritsar</b>, <b>nik:kamonchi</b>, jodugar, otliq yoki shifokor.</li>
                     </ol>
+                    <div class="group">Sozlamalar</div>
+                    <div class="field">
+                        <div class="field-head">
+                            <label class="field-label" for="rosterRealOnly">Real obunachilar</label>
+                            <label class="switch">
+                                <input type="checkbox" id="rosterRealOnly">
+                                <span class="knob"></span>
+                            </label>
+                        </div>
+                        <div class="field-hint">Yoqilsa, o'yinlarda faqat va faqat ro'yxatdagi real obunachilar qatnashadi (bot va emojilar qo'shilmaydi).</div>
+                    </div>
                     <div class="field">
                         <div class="field-head"><label class="field-label">Nik ro'yxati</label></div>
                         <textarea id="rosterText" rows="12" placeholder="@ali_01&#10;sevara&#10;javohir, madina"></textarea>

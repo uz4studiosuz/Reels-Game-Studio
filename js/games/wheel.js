@@ -6,8 +6,8 @@
     const { text, rr, fit, PAL, FONT } = App.draw;
 
     const SETTINGS = [
-        { group: 'Ishtirokchilar', key: 'useRoster', label: 'Obunachi nikidan foydalanish', type: 'toggle', default: true },
-        { key: 'maxNames', label: 'Eng ko\'pi bilan', type: 'range', min: 4, max: 40, step: 1, default: 16, hint: 'Nik kam bo\'lsa, emoji bilan to\'ldiriladi' },
+        { group: 'Ishtirokchilar', key: 'fillBots', label: 'Bot bilan to\'ldirish', type: 'toggle', default: false, hint: () => App.roster.realOnly ? 'Obunachilar bo\'limida "Real obunachilar" yoqilgan (botlar o\'chiq)' : 'Obunachi yetmasa, botlar bilan to\'ldiriladi', active: () => !App.roster.realOnly },
+        { key: 'maxNames', label: 'Eng ko\'pi bilan', type: 'range', min: 2, max: 40, step: 1, default: 16, active: (v) => !App.roster.realOnly && !!v.fillBots },
         { group: 'Qoida', key: 'mode', label: 'Rejim', type: 'segment', default: 'single', options: [['single', 'Bitta'], ['multi', 'Bir nechta'], ['elim', 'Saralash']] },
         { key: 'winners', label: 'G\'oliblar soni', type: 'range', min: 2, max: 6, step: 1, default: 3, visible: (v) => v.mode === 'multi' },
         { key: 'prize', label: 'Sovg\'a matni', type: 'text', default: '', placeholder: 'masalan: 100.000 so\'m', hint: 'Tepada ko\'rinadi' },
@@ -16,9 +16,8 @@
 
     function create(env) {
         const { ctx, W, arena: A, cfg, fx, audio, rand } = env;
-        const roster = App.roster.names.length;
-        const n0 = cfg.useRoster && roster >= 2 ? Math.min(roster, cfg.maxNames) : cfg.maxNames;
-        let rem = env.participants(n0);
+        const rem = env.participants(cfg.maxNames, { min: 2, max: 40 });
+        if (rem.length < 2) return env.emptyScreen('Omad charxi', 2);
         const winners = [];
         const out = [];
         const CX = W / 2, CY = 700, R = 290;

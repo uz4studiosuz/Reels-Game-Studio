@@ -5,8 +5,8 @@
     const { text, fit, token, PAL } = App.draw;
 
     const SETTINGS = [
-        { group: 'Ishtirokchilar', key: 'players', label: 'O\'yinchilar', type: 'range', min: 4, max: 20, step: 1, default: 12 },
-        { key: 'useRoster', label: 'Obunachi nikidan foydalanish', type: 'toggle', default: true },
+        { group: 'Ishtirokchilar', key: 'fillBots', label: 'Bot bilan to\'ldirish', type: 'toggle', default: false, hint: () => App.roster.realOnly ? 'Obunachilar bo\'limida "Real obunachilar" yoqilgan (botlar o\'chiq)' : 'Obunachi yetmasa, botlar bilan to\'ldiriladi', active: () => !App.roster.realOnly },
+        { key: 'players', label: 'Eng ko\'pi bilan', type: 'range', min: 2, max: 20, step: 1, default: 12, active: (v) => !App.roster.realOnly && !!v.fillBots },
         { key: 'names', label: 'Ismlar ko\'rinsin', type: 'toggle', default: true },
         { group: 'Jang', key: 'power', label: 'Zarba kuchi', type: 'range', min: 0.5, max: 2, step: 0.1, default: 1, unit: '×' },
         { key: 'mass', label: 'Og\'irlik farqi', type: 'range', min: 0, max: 1, step: 0.1, default: 0.5, hint: 'Og\'ir shar kam itariladi, lekin sekinroq' },
@@ -16,9 +16,11 @@
     function create(env) {
         const { ctx, W, cfg, fx, audio, rnd } = env;
         const CX = W / 2, CY = 690, R0 = 310;
-        const n = cfg.players;
+        const people = env.participants(cfg.players, { min: 2, max: 20 });
+        if (people.length < 2) return env.emptyScreen('Sumo', 2);
+        const n = people.length;
         const base = clamp(R0 * 0.62 / Math.sqrt(n) * 0.9, 17, 34);
-        const B = env.participants(n).map((p, i) => {
+        const B = people.map((p, i) => {
             const m = 1 + (rnd(0, 1) - 0.5) * cfg.mass * 1.4;
             const a = (i / n) * TAU + rnd(-0.2, 0.2), d = 110 + rnd(0, 70);
             return { p, i, m, r: base * Math.sqrt(m), x: CX + Math.cos(a) * d, y: CY + Math.sin(a) * d, vx: 0, vy: 0, alive: true, fall: 0, dash: rnd(30, 90), flash: 0 };

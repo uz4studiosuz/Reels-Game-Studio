@@ -5,15 +5,17 @@
     const { text, fit, token, PAL } = App.draw;
 
     const SETTINGS = [
-        { group: 'Ishtirokchilar', key: 'players', label: 'O\'yinchilar', type: 'range', min: 4, max: 20, step: 1, default: 10 },
-        { key: 'useRoster', label: 'Obunachi nikidan foydalanish', type: 'toggle', default: true },
+        { group: 'Ishtirokchilar', key: 'fillBots', label: 'Bot bilan to\'ldirish', type: 'toggle', default: false, hint: () => App.roster.realOnly ? 'Obunachilar bo\'limida "Real obunachilar" yoqilgan (botlar o\'chiq)' : 'Obunachi yetmasa, botlar bilan to\'ldiriladi', active: () => !App.roster.realOnly },
+        { key: 'players', label: 'Eng ko\'pi bilan', type: 'range', min: 4, max: 20, step: 1, default: 10, active: (v) => !App.roster.realOnly && !!v.fillBots },
         { group: 'Qoida', key: 'mode', label: 'Bomba qanday o\'tadi', type: 'segment', default: 'random', options: [['random', 'Tasodifiy'], ['next', 'Qo\'shniga']] },
         { key: 'fuse', label: 'Pilik uzunligi', type: 'range', min: 0.5, max: 2, step: 0.1, default: 1, unit: '×', hint: 'Har raund necha soniya davom etadi' },
     ];
 
     function create(env) {
         const { ctx, W, cfg, fx, audio, rnd } = env;
-        const P = env.participants(cfg.players).map(p => ({ p, alive: true, ang: 0, tAng: 0, sc: 1 }));
+        const people = env.participants(cfg.players, { min: 2, max: 20 });
+        if (people.length < 2) return env.emptyScreen('Bomba', 2);
+        const P = people.map(p => ({ p, alive: true, ang: 0, tAng: 0, sc: 1 }));
         const CX = W / 2, CY = 690, RR = 232;
         const r = clamp((TAU * RR / P.length) * 0.34, 20, 38);
         let alive = P.length, holder = Math.floor(rnd(0, P.length)), flight = null, passT = 30, left = 0, total = 0, pause = 50, over = false, endT = 0;

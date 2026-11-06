@@ -13,8 +13,8 @@
     const ICON = { turbo: '⚡', rocket: '🚀', shield: '🛡️', oil: '🛢️' };
 
     const SETTINGS = [
-        { group: 'Ishtirokchilar', key: 'balls', label: 'Sharlar soni', type: 'range', min: 3, max: 12, step: 1, default: 7 },
-        { key: 'useRoster', label: 'Obunachi nikidan foydalanish', type: 'toggle', default: true, hint: 'Yetmasa emoji bilan to\'ldiriladi' },
+        { group: 'Ishtirokchilar', key: 'fillBots', label: 'Bot bilan to\'ldirish', type: 'toggle', default: false, hint: () => App.roster.realOnly ? 'Obunachilar bo\'limida "Real obunachilar" yoqilgan (botlar o\'chiq)' : 'Obunachi yetmasa, botlar bilan to\'ldiriladi', active: () => !App.roster.realOnly },
+        { key: 'balls', label: 'Eng ko\'pi bilan', type: 'range', min: 2, max: 12, step: 1, default: 7, active: (v) => !App.roster.realOnly && !!v.fillBots },
         { group: 'Qiziqarli qoidalar', key: 'elimination', label: 'Saralash', type: 'toggle', default: true, hint: 'Nazorat nuqtalarida oxirgi shar chiqib ketadi (kamida 3 ta qoladi)' },
         { key: 'items', label: 'Sovg\'a qutilari', type: 'toggle', default: true, hint: '⚡ turbo · 🚀 raketa · 🛡️ qalqon · 🛢️ moy' },
         { key: 'movers', label: 'Harakatlanuvchi to\'siqlar', type: 'toggle', default: true },
@@ -30,7 +30,8 @@
 
     function create(env) {
         const { ctx, W, H, cfg, rand } = env;
-        const people = env.participants(cfg.balls);
+        const people = env.participants(cfg.balls, { min: 2, max: 12 });
+        if (people.length < 2) return env.emptyScreen('Yo\'l poygasi', 2);
         const nSections = cfg.length === 'auto' ? Math.round(env.targetSec / 3.1) : SECTIONS[cfg.length];
         const elimination = cfg.elimination && people.length >= 5;
         const track = NS.build({ sections: nSections, chaos: cfg.chaos, spirals: cfg.spirals, jumps: cfg.jumps, hills: cfg.hills, items: cfg.items, movers: cfg.movers, elimination }, rand);

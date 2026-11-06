@@ -25,6 +25,7 @@
             return {
                 app: 'reels-lab', version: VERSION, savedAt: new Date().toISOString(),
                 roster: App.roster.names,
+                realOnly: !!App.roster.realOnly,
                 profiles: App.roster.profiles,
                 video,
                 games: collectSettings(),
@@ -57,6 +58,7 @@
             if (mode === 'replace') {
                 R.names = Array.isArray(d.roster) ? d.roster : [];
                 R.profiles = d.profiles || {};
+                if (d.realOnly !== undefined) R.realOnly = !!d.realOnly;
             } else {
                 R.names = R.parse(R.names.join('\n') + '\n' + (d.roster || []).join('\n'));
                 for (const [k, p] of Object.entries(d.profiles || {})) {

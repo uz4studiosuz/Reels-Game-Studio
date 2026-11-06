@@ -134,6 +134,12 @@
             $('panelVideo').hidden = name !== 'video';
             $('panelVoice').hidden = name !== 'video';
             $('panelRoster').hidden = name !== 'roster';
+            if (name === 'game' && this.def) {
+                App.form.render($('panelGame'), this.def.settings, this.cfg, () => {
+                    LS.set('rl.cfg.' + this.def.id, this.cfg);
+                    this._scheduleRestart();
+                });
+            }
         },
 
         // ---------- ovozli diktor paneli ----------
@@ -301,10 +307,23 @@
                 $('rosterCount').textContent = n;
                 $('homeRosterCount').textContent = n;
                 if (document.activeElement !== $('rosterText')) $('rosterText').value = App.roster.names.join('\n');
+                if ($('rosterRealOnly')) $('rosterRealOnly').checked = !!App.roster.realOnly;
                 this._renderRosterTable();
+                if (this.def && !$('panelGame').hidden) {
+                    App.form.render($('panelGame'), this.def.settings, this.cfg, () => {
+                        LS.set('rl.cfg.' + this.def.id, this.cfg);
+                        this._scheduleRestart();
+                    });
+                }
             };
             App.roster.onChange(sync);
             sync();
+            if ($('rosterRealOnly')) {
+                $('rosterRealOnly').addEventListener('change', () => {
+                    App.roster.setRealOnly($('rosterRealOnly').checked);
+                    this._scheduleRestart();
+                });
+            }
 
             // zaxira: faylga saqlash va tiklash
             const note = (t, bad) => { $('rosterNote').textContent = t; $('rosterNote').style.color = bad ? 'var(--accent)' : '#2f7d4f'; };

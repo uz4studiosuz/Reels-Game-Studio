@@ -6,8 +6,8 @@
     const { text, rr, fit, token, PAL } = App.draw;
 
     const SETTINGS = [
-        { group: 'Ishtirokchilar', key: 'players', label: 'O\'yinchilar', type: 'range', min: 3, max: 20, step: 1, default: 8 },
-        { key: 'useRoster', label: 'Obunachi nikidan foydalanish', type: 'toggle', default: true },
+        { group: 'Ishtirokchilar', key: 'fillBots', label: 'Bot bilan to\'ldirish', type: 'toggle', default: false, hint: () => App.roster.realOnly ? 'Obunachilar bo\'limida "Real obunachilar" yoqilgan (botlar o\'chiq)' : 'Obunachi yetmasa, botlar bilan to\'ldiriladi', active: () => !App.roster.realOnly },
+        { key: 'players', label: 'Eng ko\'pi bilan', type: 'range', min: 2, max: 20, step: 1, default: 8, active: (v) => !App.roster.realOnly && !!v.fillBots },
         { group: 'Qoida', key: 'mode', label: 'Rejim', type: 'segment', default: 'knockout', options: [['knockout', 'Saralash'], ['single', 'Bitta raund']], hint: 'Saralash: gol urganlar keyingi raundga o\'tadi, bittasi qolguncha' },
         { key: 'keeper', label: 'Darvozabon mahorati', type: 'range', min: 0.1, max: 0.9, step: 0.05, default: 0.45 },
         { key: 'miss', label: 'Darvozadan chetga chiqish', type: 'range', min: 0, max: 0.3, step: 0.02, default: 0.1 },
@@ -15,7 +15,8 @@
 
     function create(env) {
         const { ctx, W, arena: A, cfg, fx, audio, rnd, rand } = env;
-        const people = env.participants(cfg.players);
+        const people = env.participants(cfg.players, { min: 1, max: 20 });
+        if (people.length < 1) return env.emptyScreen('Penalti', 1);
         const GX = W / 2, GT = A.y + 150, GW = 420, GH = 170;   // darvoza
         const SPOT = { x: GX, y: A.y + A.h - 170 };
         // davomiylik: taxminiy zarbalar soniga qarab bitta zarba tezligi
