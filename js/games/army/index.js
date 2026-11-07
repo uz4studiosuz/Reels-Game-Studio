@@ -11,7 +11,7 @@
     const SETTINGS = [
         { group: 'Qatnashuvchilar', key: 'fillBots', label: 'Bot bilan to\'ldirish', type: 'toggle', default: false, hint: () => App.roster.realOnly ? 'Obunachilar bo\'limida "Real obunachilar" yoqilgan (botlar o\'chiq)' : 'Obunachi yetmasa, botlar bilan to\'ldiriladi', active: () => !App.roster.realOnly },
         { key: 'total', label: 'Eng ko\'pi bilan', type: 'range', min: 2, max: 120, step: 2, default: 60, hint: (v) => { const h = Math.round((v.total || 60) / 2); return `Yarmi qizil, yarmi ko'k (${h} + ${h})` + (App.roster.names.length ? ` · Ro'yxatda: ${App.roster.names.length} ta` : ''); } },
-        { key: 'classes', label: 'Jangchi turi', type: 'segment', default: 'viewer', options: [['viewer', 'Obunachi tanlaydi'], ['random', 'Tasodifiy']], hint: 'Komment: "nik ritsar", "nik:kamonchi", jodugar, otliq, shifokor' },
+        { key: 'classes', label: 'Jangchi turi', type: 'segment', default: 'viewer', options: [['viewer', 'Obunachi tanlaydi'], ['random', 'Tasodifiy']], hint: 'Komment: "nik ritsar", "nik:kamonchi", ritsar, kamonchi, jodugar, otliq, shifokor' },
         { group: 'Jamoalar', key: 'aName', label: 'Qizil jamoa nomi', type: 'text', default: 'QIZIL ARMIYA' },
         { key: 'bName', label: 'Ko\'k jamoa nomi', type: 'text', default: 'KO\'K ARMIYA' },
         {
@@ -40,7 +40,12 @@
         { key: 'remember', label: 'Jamoa va turni eslab qolish', type: 'toggle', default: true, hint: 'Obunachi har safar o\'sha jamoa va jangchida chiqadi (Obunachilar tabida ko\'rinadi)' },
     ];
 
-    const WEIGHTS = [['knight', 0.3], ['archer', 0.25], ['mage', 0.15], ['cavalry', 0.15], ['healer', 0.15]];
+    const WEIGHTS = [
+        ['knight', 0.18], ['archer', 0.14], ['mage', 0.10], ['cavalry', 0.10], ['healer', 0.08],
+        ['king', 0.04], ['king_father', 0.03], ['dragon', 0.04], ['giant', 0.04], ['godzilla', 0.03],
+        ['commander', 0.05], ['programmer', 0.04], ['banker', 0.04], ['blogger', 0.04],
+        ['dark_knight', 0.05], ['builder', 0.04],
+    ];
 
     /** Obunachi yetmaganda: ko'rsatma ekrani chiqadi. */
     function emptyScreen(env) {
@@ -76,8 +81,13 @@
         for (const m of people) if (remember && m.p.nick && (m.p.team === 0 || m.p.team === 1)) { m.team = m.p.team; cnt[m.team]++; }
         const free = people.filter(m => m.team < 0);
         for (let i = free.length - 1; i > 0; i--) { const j = Math.floor(rand() * (i + 1)); [free[i], free[j]] = [free[j], free[i]]; }
+        const power = m => { const c = NS.CLASSES[m.cls]; return c.hp + (c.dmg || 0) / c.cd * 12 + (c.heal || 0) / c.cd * 8; };
+        const strengths = [0, 0];
+        for (const m of people) if (m.team >= 0) strengths[m.team] += power(m);
+        free.sort ( (a, b) => power(b) - power(a) );
         for (const m of free) {
-            m.team = cnt[0] <= cnt[1] ? 0 : 1; cnt[m.team]++;
+            m.team = cnt[0] !== cnt[1] ? (cnt[0] < cnt[1] ? 0 : 1) : (strengths[0] <= strengths[1] ? 0 : 1);
+            cnt[m.team]++; strengths[m.team] += power(m);
             if (remember && m.p.nick) { App.roster.profile(m.p.name).team = m.team; }
         }
         if (remember) App.roster.saveProfiles();
@@ -94,6 +104,7 @@
         let slowStart = 0, endTick = 0, finished = false;
 
         const sparks = [];
+        const rnd = (a, b) => a + rand() * (b - a);
         const pick = (arr) => arr[Math.floor(rand() * arr.length)];
 
         function handle(type, a, b) {
@@ -150,15 +161,23 @@
 
             if (battle.winner >= 0 && !finished) {
                 if (!endTick) endTick = env.tick;
-                if (env.tick - endTick > 130) {
+                if (env.tick - endTick > 300) {
                     finished = true;
                     const w = battle.winner;
                     for (const u of battle.units) if (u.p.nick) App.roster.recordGame(u.p.name, { won: u.team === w, kills: u.kills, team: u.team });
                     const mvp = battle.units.reduce((m, u) => (u.kills > m.kills ? u : m), battle.units[0]);
+                    const winnersList = battle.units.filter(u => u.team === w).sort((a, b) => (b.alive ? 1 : 0) - (a.alive ? 1 : 0) || b.kills - a.kills);
                     env.finish({
                         kicker: 'G\'OLIB ARMIYA', title: names[w],
                         sub: `${battle.alive(w)} ta jangchi tirik qoldi · MVP ${mvp.kills ? App.roster.display(mvp.p) : '—'}`,
                         color: TEAM_HEX[w],
+                        winners: winnersList.map(u => ({
+                            name: App.roster.display(u.p),
+                            icon: u.c.icon,
+                            clsName: u.c.name,
+                            kills: u.kills,
+                            alive: u.alive
+                        })),
                         speak: `${names[w]} g'alaba qozondi! ` + (mvp.kills ? `Eng zo'r jangchi ${App.roster.spoken(mvp.p)}, ${mvp.kills} ta dushmanni yiqitdi.` : 'Dushman armiyasi to\'liq mag\'lub etildi.'),
                     });
                 }
@@ -298,9 +317,192 @@
             }
             text(ctx, 'VS', W / 2, 150, { size: 20, weight: 800, color: PAL.mute });
             if (cfg.prompt && battle.winner < 0) {
-                const k = Math.floor(env.tick / 240) % 2;
-                text(ctx, k ? '⚔️ ritsar · 🏹 kamonchi · 🔮 jodugar · 🐎 otliq · 💚 shifokor' : 'Kommentga yoz:  nik + jangchi turi', W / 2, 252, { size: 17, weight: 700, color: PAL.ink, alpha: 0.9 });
+                const k = Math.floor(env.tick / 200) % 4;
+                const txt = k === 0 ? 'Kommentga yoz:  nik + jangchi turi' :
+                            k === 1 ? '⚔️ ritsar · 🏹 kamonchi · 🔮 jodugar · 🐎 otliq · 💚 shifokor' :
+                            k === 2 ? '👑 qirol · 🐉 ajdaho · 🗿 dev · 🦖 godzilla · 🎖️ qo\'mondon' :
+                                      '💻 dasturchi · 💰 bankir · 📱 bloger · 🖤 qora ritsar · 🔨 quruvchi';
+                text(ctx, txt, W / 2, 252, { size: 16, weight: 700, color: PAL.ink, alpha: 0.95 });
             }
+
+            // G'oliblar ro'yxati taxtasi (obunachilar o'zini va natijasini ko'rishi uchun)
+            if (battle.winner >= 0) drawVictoryBoard();
+        }
+
+        function drawVictoryBoard() {
+            const w = battle.winner;
+            if (w < 0) return;
+            const winElapsed = env.tick - slowStart;
+            const alpha = clamp(winElapsed / 22, 0, 1);
+            if (alpha <= 0.01) return;
+
+            // Bayramona uchqunlar (confetti sparks)
+            if (env.tick % 10 === 0) {
+                fx.burst(rnd(100, W - 100), rnd(280, 520), 16, {
+                    hue: w === 0 ? 12 : 215,
+                    speed: 230,
+                    life: 0.65,
+                    size: 5
+                });
+            }
+
+            const winners = battle.units.filter(u => u.team === w);
+            // Saralash: tirik qolganlar oldinda, keyin eng ko'p dushman yiqitganlar
+            winners.sort((a, b) => {
+                if (a.alive !== b.alive) return b.alive ? 1 : -1;
+                return b.kills - a.kills;
+            });
+
+            const mvp = winners.reduce((m, u) => (u.kills > m.kills ? u : m), winners[0] || {});
+
+            ctx.save();
+            ctx.globalAlpha = alpha;
+
+            // Asosiy g'oliblar taxtasi (frosted card)
+            const cardX = 30, cardW = W - 60;
+            const cardY = 270;
+            const cardH = 880;
+
+            ctx.fillStyle = 'rgba(10, 13, 20, 0.92)';
+            rr(ctx, cardX, cardY, cardW, cardH, 24);
+            ctx.fill();
+
+            // Kontur (jamoa rangida)
+            ctx.strokeStyle = TEAM_HEX[w];
+            ctx.lineWidth = 2.5;
+            ctx.stroke();
+
+            // Yuqori jamoa lentasi
+            ctx.fillStyle = TEAM_HEX[w];
+            rr(ctx, cardX, cardY, cardW, 10, 10);
+            ctx.fill();
+
+            // Sarlavhalar
+            text(ctx, '🏆 G\'OLIBLAR RO\'YXATI', W / 2, cardY + 36, { size: 16, weight: 800, color: '#f59e0b' });
+            text(ctx, names[w].toUpperCase() + ' G\'ALABA QOZONDI!', W / 2, cardY + 70, { size: 28, weight: 800, color: '#ffffff' });
+            text(ctx, `${battle.alive(w)} ta tirik qahramon · Jami ${winners.length} ta g'olib jangchi`, W / 2, cardY + 102, { size: 14, weight: 600, color: PAL.mute });
+
+            // Chiziq
+            ctx.fillStyle = 'rgba(255,255,255,0.12)';
+            ctx.fillRect(cardX + 24, cardY + 118, cardW - 48, 1);
+
+            // Obunachilar ro'yxati (Grid)
+            const listTop = cardY + 130;
+            const listBottom = cardY + cardH - 58;
+            const listH = listBottom - listTop;
+
+            const cols = winners.length > 14 ? 2 : 1;
+            const gap = 8;
+            const colW = (cardW - 48 - (cols - 1) * gap) / cols;
+            const rowH = cols === 1 ? 48 : 42;
+            const rowsPerPage = Math.floor(listH / (rowH + gap));
+            const totalRows = Math.ceil(winners.length / cols);
+
+            let scrollY = 0;
+            if (totalRows > rowsPerPage) {
+                const maxScroll = (totalRows - rowsPerPage) * (rowH + gap);
+                const scrollTime = Math.max(0, winElapsed - 40);
+                scrollY = Math.min(maxScroll, scrollTime * 0.85);
+            }
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(cardX + 20, listTop, cardW - 40, listH);
+            ctx.clip();
+
+            for (let i = 0; i < winners.length; i++) {
+                const u = winners[i];
+                const col = i % cols;
+                const row = Math.floor(i / cols);
+                const itemX = cardX + 24 + col * (colW + gap);
+                const itemY = listTop + row * (rowH + gap) - scrollY;
+
+                if (itemY + rowH < listTop - 10 || itemY > listBottom + 10) continue;
+
+                const isMvp = u === mvp && u.kills > 0;
+
+                // Kartochka foni
+                ctx.fillStyle = isMvp ? 'rgba(245, 158, 11, 0.18)' : u.alive ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.035)';
+                rr(ctx, itemX, itemY, colW, rowH, 10);
+                ctx.fill();
+
+                ctx.strokeStyle = isMvp ? '#f59e0b' : u.alive ? 'rgba(255, 255, 255, 0.18)' : 'rgba(255, 255, 255, 0.06)';
+                ctx.lineWidth = isMvp ? 1.8 : 1;
+                ctx.stroke();
+
+                const midItemY = itemY + rowH / 2;
+                const iconX = itemX + 18;
+                text(ctx, u.c.icon, iconX, midItemY, { size: cols === 1 ? 18 : 15 });
+
+                const textStartX = iconX + 20;
+                const rawName = App.roster.display(u.p);
+                const nameMaxW = colW - (cols === 1 ? 190 : 130);
+                const fitNm = fit(ctx, rawName, nameMaxW, cols === 1 ? 16 : 14, 800);
+
+                text(ctx, fitNm, textStartX, midItemY - (cols === 1 ? 7 : 6), {
+                    size: cols === 1 ? 16 : 14,
+                    weight: 800,
+                    align: 'left',
+                    color: isMvp ? '#fbbf24' : '#ffffff'
+                });
+
+                const subLabel = `${u.c.name}` + (isMvp ? ' · 👑 MVP' : '');
+                text(ctx, subLabel, textStartX, midItemY + (cols === 1 ? 9 : 8), {
+                    size: 11,
+                    weight: 600,
+                    align: 'left',
+                    color: isMvp ? '#f59e0b' : '#94a3b8'
+                });
+
+                const rightEndX = itemX + colW - 12;
+                if (u.alive) {
+                    ctx.fillStyle = 'rgba(34, 197, 94, 0.2)';
+                    const pillW = cols === 1 ? 64 : 52;
+                    rr(ctx, rightEndX - pillW, midItemY - 11, pillW, 22, 6);
+                    ctx.fill();
+                    text(ctx, cols === 1 ? '❤️ Tirik' : '❤️', rightEndX - pillW / 2, midItemY, {
+                        size: 11,
+                        weight: 700,
+                        color: '#4ade80'
+                    });
+                } else {
+                    ctx.fillStyle = 'rgba(148, 163, 184, 0.12)';
+                    const pillW = cols === 1 ? 68 : 46;
+                    rr(ctx, rightEndX - pillW, midItemY - 11, pillW, 22, 6);
+                    ctx.fill();
+                    text(ctx, cols === 1 ? '⚔️ Qahramon' : 'Qahramon', rightEndX - pillW / 2, midItemY, {
+                        size: 10,
+                        weight: 600,
+                        color: '#94a3b8'
+                    });
+                }
+
+                if (u.kills > 0) {
+                    const killW = cols === 1 ? 60 : 44;
+                    const killX = rightEndX - (u.alive ? (cols === 1 ? 70 : 58) : (cols === 1 ? 74 : 52)) - killW;
+                    ctx.fillStyle = 'rgba(245, 158, 11, 0.2)';
+                    rr(ctx, killX, midItemY - 11, killW, 22, 6);
+                    ctx.fill();
+                    text(ctx, `⚔️ ${u.kills}`, killX + killW / 2, midItemY, {
+                        size: 11,
+                        weight: 800,
+                        color: '#fbbf24'
+                    });
+                }
+            }
+            ctx.restore();
+
+            // Pastki CTA chaqiruvi
+            const ctaY = cardY + cardH - 30;
+            const pulse = 0.5 + 0.5 * Math.sin(env.tick / 8);
+            text(ctx, '💬 O\'z ismingizni ko\'rdingizmi? Kommentga yozing!', W / 2, ctaY, {
+                size: 15,
+                weight: 800,
+                color: '#ffffff',
+                alpha: 0.85 + pulse * 0.15
+            });
+
+            ctx.restore();
         }
 
         function dispose() { world.dispose(); }

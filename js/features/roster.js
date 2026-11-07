@@ -8,18 +8,36 @@
 
     const KEY = 'rl.roster.v1';
     const REAL_KEY = 'rl.roster.realOnly';
-    const MAX_LEN = 14;
+    const MAX_LEN = 26;
     const FALLBACK = ['🐶', '🐱', '🦊', '🐼', '🐸', '🦁', '🐵', '🐯', '🐷', '🐰', '🐨', '🐮', '🐔', '🐧', '🦄', '🐙', '🐢', '🦉', '🐳', '🦋', '🐝', '🦀', '🐞', '🦖'];
 
     // jangchi turlari va ularning sinonimlari
     const CLASSES = {
+        // Asosiy jangchilar
         ritsar: 'knight', knight: 'knight', jangchi: 'knight', tank: 'knight',
         kamonchi: 'archer', archer: 'archer', mergan: 'archer', ovchi: 'archer',
         jodugar: 'mage', mage: 'mage', sehrgar: 'mage', wizard: 'mage',
         otliq: 'cavalry', cavalry: 'cavalry', chavandoz: 'cavalry',
         shifokor: 'healer', healer: 'healer', doktor: 'healer', vrach: 'healer',
+
+        // Yangi qo'shilgan rollar
+        qirol: 'king', shoh: 'king', king: 'king',
+        ota_qirol: 'king_father', otaqirol: 'king_father', king_father: 'king_father', kingfather: 'king_father', otaxon: 'king_father',
+        ajdaho: 'dragon', ajdar: 'dragon', dragon: 'dragon',
+        dev: 'giant', gigant: 'giant', giant: 'giant',
+        godzila: 'godzilla', godzilla: 'godzilla', titan: 'godzilla',
+        qomondon: 'commander', qomondir: 'commander', sarkarda: 'commander', commander: 'commander', general: 'commander',
+        dasturchi: 'programmer', programmer: 'programmer', coder: 'programmer', itshnik: 'programmer', it: 'programmer',
+        bankir: 'banker', banker: 'banker',
+        bloger: 'blogger', blogger: 'blogger',
+        qora_ritsar: 'dark_knight', qoraritsar: 'dark_knight', dark_knight: 'dark_knight', darkknight: 'dark_knight',
+        quruvchi: 'builder', builder: 'builder', usta: 'builder',
     };
-    const CLASS_LIST = ['knight', 'archer', 'mage', 'cavalry', 'healer'];
+    const CLASS_LIST = [
+        'knight', 'archer', 'mage', 'cavalry', 'healer',
+        'king', 'king_father', 'dragon', 'giant', 'godzilla',
+        'commander', 'programmer', 'banker', 'blogger', 'dark_knight', 'builder'
+    ];
 
     const Roster = {
         names: [],
@@ -58,7 +76,7 @@
             for (let raw of String(text || '').split(/[\n,;\t]+/)) {
                 raw = raw.trim().replace(/^@+/, '');
                 let cls = null;
-                const m = raw.match(/^(.*?)[\s:|\-–]+([A-Za-zʻ'’]+)$/);
+                const m = raw.match(/^(.*?)[\s:|\-–]+([A-Za-z0-9ʻ'’_]+)$/);
                 if (m) {
                     const key = m[2].toLowerCase().replace(/[ʻ'’]/g, '');
                     if (CLASSES[key]) { cls = CLASSES[key]; raw = m[1].trim(); }

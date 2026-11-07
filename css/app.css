@@ -166,3 +166,9 @@ input[type=range] { width: 100%; accent-color: var(--ink); height: 18px; margin:
     .bar, .home { padding-left: 18px; padding-right: 18px; }
     .hero { flex-direction: column; align-items: flex-start; }
 }
+
+.rost-group { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; padding: 9px 12px; border-radius: 8px; font-size: 12px; }
+.rost-group.red { background: rgba(232,69,42,.12); color: #c63828; }
+.rost-group.blue { background: rgba(59,120,232,.12); color: #3265c4; }
+.rost-group.auto { background: rgba(130,130,130,.10); color: var(--mute); }
+.rost-empty { padding: 9px 12px; color: var(--mute); font-size: 11px; }

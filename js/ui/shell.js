@@ -294,7 +294,20 @@
                 : '';
 
             const rows = [`<div class="rost-row head"><span>Nik</span><span>Jangchi</span><span>Jamoa</span><span style="text-align:right">G / O / K</span></div>`];
-            R.names.slice(0, MAX).forEach((e, i) => {
+            const visible = R.names.slice(0, MAX);
+            const groups = [
+                { team: 0, title: 'Qizil jamoa', count: cnt0, color: 'red' },
+                { team: 1, title: "Ko‘k jamoa", count: cnt1, color: 'blue' },
+                { team: null, title: 'Jamoasi tanlanmagan', count: cntAuto, color: 'auto' },
+            ];
+            groups.forEach(group => {
+                const members = visible.filter(e => {
+                    const team = R.profile(R.split(e).name).team;
+                    return group.team === null ? team !== 0 && team !== 1 : team === group.team;
+                });
+                rows.push(`<div class="rost-group ${group.color}"><strong>${group.title}</strong><span>${group.count} ta</span></div>`);
+                if (!members.length) rows.push('<div class="rost-empty">Hozircha jangchi yo‘q</div>');
+                members.forEach(e => {
                 const { name, cls } = R.split(e), pr = R.profile(name);
                 const dot = pr.team === 0 ? '#e8452a' : pr.team === 1 ? '#3b78e8' : '#b8b5ab';
                 rows.push(`<div class="rost-row" data-name="${name.replace(/"/g, '&quot;')}">
@@ -303,6 +316,7 @@
                     <select data-k="team"><option value=""${pr.team === null ? ' selected' : ''}>Avto</option><option value="0"${pr.team === 0 ? ' selected' : ''}>Qizil</option><option value="1"${pr.team === 1 ? ' selected' : ''}>Ko'k</option></select>
                     <span class="st" title="g'alaba / o'yin / o'ldirgan">${pr.wins}/${pr.games}/${pr.kills}</span>
                 </div>`);
+                });
             });
             if (R.names.length > MAX) rows.push(`<div class="rost-help">… yana ${R.names.length - MAX} ta (jadvalda faqat birinchi ${MAX} ta ko'rsatiladi)</div>`);
             if (!R.names.length) rows.push('<div class="rost-help">Hozircha obunachi yo\'q.</div>');

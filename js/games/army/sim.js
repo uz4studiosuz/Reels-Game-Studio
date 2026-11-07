@@ -9,14 +9,31 @@
     const FIELD = { hw: 38, hl: 58 };
 
     const CLASSES = {
-        knight:  { name: 'Ritsar',   icon: '⚔️', hp: 160, dmg: 14, range: 2.0, speed: 4.5, cd: 0.9, size: 0.62 },
-        archer:  { name: 'Kamonchi', icon: '🏹', hp: 75,  dmg: 10, range: 16,  speed: 4.1, cd: 1.1, size: 0.5, proj: 30 },
-        mage:    { name: 'Jodugar',  icon: '🔮', hp: 90,  dmg: 16, range: 12,  speed: 3.8, cd: 1.9, size: 0.5, proj: 20, aoe: 3.6 },
-        cavalry: { name: 'Otliq',    icon: '🐎', hp: 125, dmg: 13, range: 2.4, speed: 8.4, cd: 1.0, size: 0.75 },
-        healer:  { name: 'Shifokor', icon: '💚', hp: 85,  dmg: 0,  range: 11,  speed: 4.3, cd: 1.4, size: 0.5, heal: 18 },
+        knight:       { name: 'Ritsar',      icon: '⚔️', hp: 160, dmg: 14, range: 2.0, speed: 4.5, cd: 0.9, size: 0.62 },
+        archer:       { name: 'Kamonchi',    icon: '🏹', hp: 75,  dmg: 10, range: 16,  speed: 4.1, cd: 1.1, size: 0.5, proj: 30, projKind: 'arrow' },
+        mage:         { name: 'Jodugar',     icon: '🔮', hp: 90,  dmg: 16, range: 12,  speed: 3.8, cd: 1.9, size: 0.5, proj: 20, aoe: 3.6, projKind: 'fire' },
+        cavalry:      { name: 'Otliq',       icon: '🐎', hp: 125, dmg: 13, range: 2.4, speed: 8.4, cd: 1.0, size: 0.75 },
+        healer:       { name: 'Shifokor',    icon: '💚', hp: 85,  dmg: 0,  range: 11,  speed: 4.3, cd: 1.4, size: 0.5, heal: 18 },
+
+        // Yangi qo'shilgan qahramonlar
+        king:         { name: 'Qirol',       icon: '👑', hp: 260, dmg: 22, range: 2.2, speed: 4.2, cd: 0.85, size: 0.72 },
+        king_father:  { name: 'Ota Qirol',   icon: '👴', hp: 320, dmg: 28, range: 2.5, speed: 3.8, cd: 0.95, size: 0.76 },
+        dragon:       { name: 'Ajdaho',      icon: '🐉', hp: 500, dmg: 26, range: 15,  speed: 5.4, cd: 1.8, size: 1.15, proj: 24, aoe: 4.5, projKind: 'fire' },
+        giant:        { name: 'Dev',         icon: '🗿', hp: 550, dmg: 38, range: 2.8, speed: 3.2, cd: 1.6, size: 1.25, aoe: 3.2 },
+        godzilla:     { name: 'Godzilla',    icon: '🦖', hp: 650, dmg: 42, range: 16,  speed: 3.4, cd: 2.0, size: 1.35, proj: 28, aoe: 4.2, projKind: 'atomic' },
+        commander:    { name: 'Qo\'mondon',  icon: '🎖️', hp: 210, dmg: 18, range: 2.2, speed: 4.8, cd: 0.8, size: 0.68 },
+        programmer:   { name: 'Dasturchi',   icon: '💻', hp: 105, dmg: 20, range: 13,  speed: 4.2, cd: 1.2, size: 0.52, proj: 26, projKind: 'code' },
+        banker:       { name: 'Bankir',      icon: '💰', hp: 130, dmg: 16, range: 10,  speed: 4.0, cd: 1.1, size: 0.54, proj: 22, projKind: 'coin' },
+        blogger:      { name: 'Bloger',      icon: '📱', hp: 115, dmg: 17, range: 12,  speed: 4.6, cd: 1.0, size: 0.52, proj: 25, projKind: 'flash' },
+        dark_knight:  { name: 'Qora Ritsar', icon: '🖤', hp: 240, dmg: 26, range: 2.2, speed: 4.8, cd: 0.85, size: 0.70 },
+        builder:      { name: 'Quruvchi',    icon: '🔨', hp: 200, dmg: 19, range: 2.0, speed: 4.1, cd: 1.0, size: 0.65 },
     };
     // oldingi qatordan boshlab joylashuv
-    const ROW = { knight: 8, cavalry: 5, archer: 2, mage: 0, healer: -2 };
+    const ROW = {
+        godzilla: 10, giant: 9, dark_knight: 9, knight: 8, cavalry: 7, commander: 6, builder: 6,
+        king: 4, king_father: 3, banker: 2,
+        dragon: 5, archer: 2, programmer: 1, blogger: 1, mage: 0, healer: -2
+    };
 
     class Battle {
         /**
@@ -85,7 +102,9 @@
                 if (!o.alive || o.team === u.team) continue;
                 const d2 = (o.x - u.x) ** 2 + (o.z - u.z) ** 2;
                 if (d2 > lim) continue;
-                const sc = d2 * (1 + 0.65 * (this.engaged[o.id] || 0));
+                const threat = o.tgt === u ? 0.7 : 1;
+                const vulnerable = 0.8 + 0.2 * (o.hp / o.max);
+                const sc = d2 * (1 + 0.65 * (this.engaged[o.id] || 0)) * threat * vulnerable;
                 if (sc < bs) { bs = sc; best = o; }
             }
             return best || this._nearest(u, o => o.team !== u.team, 999);
@@ -152,24 +171,33 @@
                         if (ally && d <= c.range * 0.9 && t.hp < t.max) {
                             if (u.cd <= 0) { t.hp = Math.min(t.max, t.hp + c.heal); u.cd = c.cd; this.onEvent('heal', t, u); }
                         } else if (d > 4) { mx = dx / d; mz = dz / d; speed *= 0.85; }
+                    } else if ((u.cls === 'archer' || u.cls === 'mage') && d < c.range * 0.45) {
+                        mx = -dx / d; mz = -dz / d; speed *= 0.6;
                     } else if (d > reach * 0.88) {
                         // har kim nishonning o'z tomoniga boradi: atrofida halqa bo'lib joylashadi
                         const ang = Math.atan2(-dz, -dx) + u.slot, rp = Math.max(reach * 0.8, 1.5);
                         const ex = t.x + Math.cos(ang) * rp - u.x, ez = t.z + Math.sin(ang) * rp - u.z, ed = Math.hypot(ex, ez) || 1;
                         mx = ex / ed; mz = ez / ed;
-                    } else if ((u.cls === 'archer' || u.cls === 'mage') && d < c.range * 0.45) {
-                        mx = -dx / d; mz = -dz / d; speed *= 0.6;
                     }
 
                     if (d <= reach && u.cd <= 0 && u.cls !== 'healer') {
                         u.face = Math.atan2(dx, dz);
                         const mul = u.dmgMul * this.cs * paceMul;
                         if (c.proj) {
-                            this._shoot(u, t, c.dmg * mul, c.proj, c.aoe || 0, c.aoe ? 'fire' : 'arrow');
+                            const kind = c.projKind || (c.aoe ? 'fire' : 'arrow');
+                            this._shoot(u, t, c.dmg * mul, c.proj, c.aoe || 0, kind);
                         } else {
                             let dmg = c.dmg * mul;
                             if (u.charge) { dmg *= 2; u.charge = false; }
                             this._damage(u, t, dmg);
+                            if (c.aoe) {
+                                for (const o of U) {
+                                    if (o.alive && o.team !== u.team && o !== t && Math.hypot(o.x - t.x, o.z - t.z) < c.aoe) {
+                                        this._damage(u, o, dmg * 0.6);
+                                    }
+                                }
+                                this.onEvent('aoe', { tx: t.x, tz: t.z, aoe: c.aoe });
+                            }
                             this.onEvent('hit', t, u);
                         }
                         u.cd = c.cd * (0.9 + this.rand() * 0.2);

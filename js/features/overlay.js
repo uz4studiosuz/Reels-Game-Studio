@@ -159,6 +159,11 @@
             const t = fitSize(ctx, result.title, 560, 66, 800, 30);
             text(ctx, t.text, 0, -22, { size: t.size, color: '#111', weight: 800 });
             if (result.sub) { const s = fitSize(ctx, result.sub, 560, 26, 600, 15); text(ctx, s.text, 0, 38, { size: s.size, color: '#55525c', weight: 600 }); }
+            if (result.winners && result.winners.length) {
+                const winNames = result.winners.slice(0, 8).map(w => (w.icon ? w.icon + ' ' : '') + w.name).join('  ●  ');
+                const ws = fitSize(ctx, winNames, 560, 15, 700, 11);
+                text(ctx, ws.text, 0, 70, { size: ws.size, color: result.color || PAL.accent, weight: 700 });
+            }
             // komment chaqiruvi tugmasi (urilib turadi), matn sig'maguncha kichrayadi yoki ikki qatorga bo'linadi
             const bump = 1 + 0.025 * Math.sin(endT / 6);
             ctx.save();

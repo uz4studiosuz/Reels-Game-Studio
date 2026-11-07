@@ -71,6 +71,88 @@
         return g;
     }
 
+    /** O'rta asr olov mash'alasi (flaming brazier / gulxan kosa). */
+    function createBrazier(x, z) {
+        const g = new THREE.Group();
+        const iron = L(0x222428);
+        const fireMat = B(0xff7700);
+        const coreMat = B(0xffea44);
+        for (let i = 0; i < 3; i++) {
+            const ang = i * (Math.PI * 2 / 3);
+            const leg = part(g, G.cyl, iron, Math.sin(ang) * 0.55, 1.1, Math.cos(ang) * 0.55, 0.05, 2.3, 0.05);
+            leg.rotation.z = Math.cos(ang) * 0.22; leg.rotation.x = -Math.sin(ang) * 0.22;
+        }
+        part(g, G.cyl, iron, 0, 2.2, 0, 0.75, 0.45, 0.75);
+        part(g, G.tor, iron, 0, 2.42, 0, 0.76, 0.08, 0.76).rotation.x = Math.PI / 2;
+        const fl = new THREE.Group(); fl.position.set(0, 2.5, 0);
+        part(fl, G.cone, fireMat, 0, 0.5, 0, 0.45, 1.2, 0.45);
+        part(fl, G.cone, coreMat, 0, 0.35, 0, 0.28, 0.9, 0.28);
+        part(fl, G.sph, coreMat, 0, 0.15, 0, 0.32, 0.32, 0.32);
+        g.add(fl);
+        g.position.set(x, 0, z);
+        g.userData = { fl };
+        return g;
+    }
+
+    /** Harbiy lager chodiri (camp pavilion). */
+    function createTent(team, x, z, rotY) {
+        const g = new THREE.Group();
+        const cloth = L(TEAM[team]);
+        const trim = L(team === 0 ? 0xffd700 : 0xe0e6ed);
+        const pole = L(0x56381e);
+        part(g, G.cone, cloth, 0, 3.4, 0, 3.4, 5.4, 3.4);
+        part(g, G.cyl, cloth, 0, 1.1, 0, 3.2, 2.2, 3.2);
+        part(g, G.cyl, pole, 0, 6.0, 0, 0.08, 1.4, 0.08);
+        part(g, G.cone, trim, 0, 6.6, 0, 0.25, 0.6, 0.25);
+        part(g, G.box, L(0x1a1614), 0, 1.0, 3.0, 1.1, 2.0, 0.2);
+        g.position.set(x, 0, z);
+        g.rotation.y = rotY;
+        return g;
+    }
+
+    /** Qadimiy tosh qorovul minorasi (ancient stone watchtower). */
+    function createWatchtower(x, z) {
+        const g = new THREE.Group();
+        const stone = L(0x5c5952), stoneDark = L(0x44423d), wood = L(0x4a321a);
+        part(g, G.cyl, stone, 0, 8, 0, 3.2, 16, 3.2);
+        part(g, G.cyl, stoneDark, 0, 1.2, 0, 3.8, 2.4, 3.8);
+        part(g, G.cyl, stoneDark, 0, 16.2, 0, 3.8, 0.8, 3.8);
+        for (let i = 0; i < 8; i++) {
+            const a = i * Math.PI / 4;
+            part(g, G.box, stone, Math.sin(a) * 3.4, 17.2, Math.cos(a) * 3.4, 0.8, 1.2, 0.8);
+        }
+        part(g, G.cone, wood, 0, 19.5, 0, 4.0, 3.8, 4.0);
+        g.position.set(x, 0, z);
+        return g;
+    }
+
+    function createGroundTexture() {
+        if (typeof document === 'undefined') return null;
+        try {
+            const can = document.createElement('canvas');
+            can.width = 512; can.height = 512;
+            const ctx = can.getContext('2d');
+            const gr = ctx.createLinearGradient(0, 0, 512, 512);
+            gr.addColorStop(0, '#354e22'); gr.addColorStop(0.5, '#3b5526'); gr.addColorStop(1, '#2f451f');
+            ctx.fillStyle = gr; ctx.fillRect(0, 0, 512, 512);
+            const colors = ['#2e421c', '#46632c', '#4d3923', '#3d2e1c', '#544229', '#273819'];
+            for (let i = 0; i < 3500; i++) {
+                ctx.fillStyle = colors[Math.floor(Math.random() * colors.length)];
+                ctx.fillRect(Math.random() * 512, Math.random() * 512, 1.5 + Math.random() * 2.5, 1.5 + Math.random() * 2.5);
+            }
+            ctx.fillStyle = 'rgba(65, 48, 28, 0.4)';
+            for (let i = 0; i < 24; i++) {
+                ctx.beginPath();
+                ctx.ellipse(Math.random() * 512, Math.random() * 512, 18 + Math.random() * 32, 10 + Math.random() * 16, Math.random() * Math.PI, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            const tex = new THREE.CanvasTexture(can);
+            tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+            tex.repeat.set(16, 24);
+            return tex;
+        } catch (e) { return null; }
+    }
+
     class ArmyWorld {
         constructor(battle) {
             App.gl.init();
@@ -107,12 +189,13 @@
             scene.add(sun);
 
             // ---------------- TABIIY OCHIQ JANG MAYDONI (Stadion emas!) ----------------
+            const gTex = createGroundTexture();
             // 1. Katta tashqi kenglik (dasht / cho'zilgan tabiat)
-            const outer = new THREE.Mesh(new THREE.PlaneGeometry(1600, 1600), L(0x344d24));
+            const outer = new THREE.Mesh(new THREE.PlaneGeometry(1600, 1600), L(0x344d24, gTex ? { map: gTex } : {}));
             outer.rotation.x = -Math.PI / 2; outer.position.y = -0.15; outer.receiveShadow = true; scene.add(outer);
 
-            // 2. Asosiy jang hududi: tabiiy yovvoyi maysa
-            const fieldPlane = new THREE.Mesh(new THREE.PlaneGeometry(W2 * 2 + 40, H2 * 2 + 40), L(0x3b5727));
+            // 2. Asosiy jang hududi: tabiiy yovvoyi maysa va tuproq
+            const fieldPlane = new THREE.Mesh(new THREE.PlaneGeometry(W2 * 2 + 50, H2 * 2 + 50), L(0x3b5727, gTex ? { map: gTex } : {}));
             fieldPlane.rotation.x = -Math.PI / 2; fieldPlane.position.y = -0.05; fieldPlane.receiveShadow = true; scene.add(fieldPlane);
 
             // 3. To'qnashuv va jang markazidagi tuproq, loy va oyoq osti bo'lgan yer qatlamlari
@@ -141,6 +224,14 @@
                 scene.add(d);
             }
 
+            // Maysa g'ujumlari (wild grass tufts)
+            const grassMat = L(0x4a6b28);
+            for (let i = 0; i < 40; i++) {
+                const gx = rnd(-W2 * 0.85, W2 * 0.85), gz = rnd(-H2 * 0.85, H2 * 0.85);
+                const tuft = part(scene, G.cone, grassMat, gx, 0.35, gz, 0.25, 0.7, 0.25, false);
+                tuft.rotation.set(rnd(-0.2, 0.2), rnd(0, 3), rnd(-0.2, 0.2));
+            }
+
             // 4. Tabiiy toshlar va qoyalar (chegaralarda va maydon atrofida)
             const stoneMat1 = L(0x5e5a52), stoneMat2 = L(0x4a4740), stoneMat3 = L(0x6e6960);
             for (let i = 0; i < 46; i++) {
@@ -151,6 +242,35 @@
                 const bsx = rnd(1.4, 4.2), bsy = rnd(0.9, 2.8), bsz = rnd(1.4, 4.0);
                 const rock = part(scene, G.sph, sm, bx, bsy * 0.4, bz, bsx, bsy, bsz);
                 rock.rotation.set(rnd(0, 1), rnd(0, 3), rnd(0, 1));
+            }
+
+            // Qadimiy tosh qorovul minorasi
+            scene.add(createWatchtower(W2 + 28, -12));
+
+            // Maydon burchaklaridagi olovli jangovar mash'alalar
+            this.braziers = [];
+            const bzPositions = [
+                [-W2 - 3, -H2 * 0.45], [W2 + 3, -H2 * 0.45],
+                [-W2 - 3, 0],          [W2 + 3, 0],
+                [-W2 - 3, H2 * 0.45],  [W2 + 3, H2 * 0.45]
+            ];
+            for (const [bx, bz] of bzPositions) {
+                const bzMesh = createBrazier(bx, bz);
+                scene.add(bzMesh);
+                this.braziers.push(bzMesh);
+            }
+
+            // Harbiy lager chodirlari
+            scene.add(createTent(0, -14, -H2 - 14, 0.15));
+            scene.add(createTent(0, 14, -H2 - 14, -0.15));
+            scene.add(createTent(1, -14, H2 + 14, Math.PI - 0.15));
+            scene.add(createTent(1, 14, H2 + 14, Math.PI + 0.15));
+
+            // Harbiy qutilar va bochkalar
+            const woodMat = L(0x56381e);
+            for (const [cx, cz] of [[-W2 - 4, -H2 + 8], [W2 + 4, H2 - 8], [-W2 - 4, H2 - 8]]) {
+                part(scene, G.box, woodMat, cx, 0.7, cz, 1.4, 1.4, 1.4);
+                part(scene, G.cyl, L(0x442c16), cx + 1.2, 0.7, cz + 0.3, 0.5, 1.4, 0.5);
             }
 
             // 5. O'rta asr harbiy bayroqlari (Qizil va Ko'k jamoalarning jang standartlari)
@@ -246,6 +366,18 @@
                 bn.userData.flag.rotation.z = Math.cos(T * 3.5 + i * 0.8) * 0.08;
             }
 
+            // mash'alalar alangasining miltillashi
+            if (this.braziers) {
+                for (let i = 0; i < this.braziers.length; i++) {
+                    const bz = this.braziers[i];
+                    const fl = bz.userData.fl;
+                    if (fl) {
+                        const s = 1 + Math.sin(T * 12 + i * 1.5) * 0.14;
+                        fl.scale.set(s, s * 1.15, s);
+                    }
+                }
+            }
+
             // jangchilar
             for (const [u, m] of this.meshes) {
                 const ud = m.userData;
@@ -286,11 +418,17 @@
             // snaryadlar
             const seen = new Set();
             for (const p of b.proj) {
+                // Rangli effektlar jangchilarni berkitmasin; zarba simulyatsiyada qoladi.
+                if (p.kind === 'atomic' || p.kind === 'coin' || p.kind === 'code') continue;
                 seen.add(p);
                 let m = this.projMesh.get(p);
                 if (!m) {
                     if (p.kind === 'fire') m = new THREE.Mesh(new THREE.SphereGeometry(0.5, 12, 10), B(0xff8a2a));
                     else if (p.kind === 'bolt') m = new THREE.Mesh(new THREE.SphereGeometry(0.28, 8, 8), B(0xffe27a));
+                    else if (p.kind === 'atomic') m = new THREE.Mesh(new THREE.SphereGeometry(0.65, 12, 10), B(0x00f0ff));
+                    else if (p.kind === 'code') m = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.35, 0.35), B(0x00ff88));
+                    else if (p.kind === 'coin') m = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.08, 12), B(0xffd700));
+                    else if (p.kind === 'flash') m = new THREE.Mesh(new THREE.SphereGeometry(0.42, 10, 10), B(0xffffff));
                     else {
                         m = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 1.5, 5), B(0x7a4a22));
                         m.rotation.order = 'YXZ';
@@ -298,9 +436,13 @@
                     this.scene.add(m);
                     this.projMesh.set(p, m);
                 }
-                const arc = p.kind === 'arrow' ? Math.sin(Math.min(1, p.life * 1.1) * Math.PI) * 2.2 : 0;
+                const arc = p.kind === 'arrow' || p.kind === 'coin' ? Math.sin(Math.min(1, p.life * 1.1) * Math.PI) * (p.kind === 'arrow' ? 2.2 : 1.4) : 0;
                 m.position.set(p.x, 2.0 + arc, p.z);
                 if (p.kind === 'arrow') m.rotation.set(Math.PI / 2, Math.atan2(p.dirx, p.dirz), 0);
+                else if (p.kind === 'code' || p.kind === 'coin') {
+                    m.rotation.x += dt * 14;
+                    m.rotation.y += dt * 10;
+                }
             }
             for (const [p, m] of this.projMesh) {
                 if (!seen.has(p)) {
@@ -358,8 +500,13 @@
     class ArmyCamera {
         constructor(world) {
             this.w = world;
-            this.pos = new THREE.Vector3(0, 52, -FIELD.hl - 14);
-            this.look = new THREE.Vector3(0, 0, 6);
+            // Sanoq paytida o‘yin yangilanmaydi: kamerani darhol ikki armiyani
+            // yon tomondan ko‘rsatadigan kadrga joylashtiramiz.
+            this.pos = new THREE.Vector3(150, 82, 0);
+            this.look = new THREE.Vector3(0, 0, 0);
+            world.camera.position.copy(this.pos);
+            world.camera.lookAt(this.look);
+            world.camera.updateMatrixWorld();
             this.hero = null;
             this.shot = -1;
         }
@@ -393,8 +540,8 @@
                     this.hero = aliveU.length ? aliveU[Math.floor(Math.random() * aliveU.length)] : null;
                 }
                 if (shot === 0) {
-                    p = new THREE.Vector3(0, 58, -HL - 18);
-                    l = new THREE.Vector3(0, 0, HL * 0.04);
+                    p = new THREE.Vector3(150, 82, 0);
+                    l = new THREE.Vector3(0, 0, 0);
                 } else if (shot === 1) {
                     const sd = (Math.floor(tick / 1650) % 2) ? 1 : -1;
                     p = new THREE.Vector3(sd * (HW + 32), 28, cz);
